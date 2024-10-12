@@ -1,0 +1,12 @@
+Package: usheR
+Title: Some helper functions for teaching
+Version: 0.0.0.9000
+Authors@R: c(
+    person("John", "Wilson", , "first.last@example.com", role = c("aut", "cre")),
+        person("First name", "Last name", , "name@ed.ac.uk", role = c("aut")),
+    )
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
