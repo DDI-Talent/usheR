@@ -2,11 +2,15 @@ Package: usheR
 Title: Some helper functions for teaching
 Version: 0.0.0.9000
 Authors@R: c(
-    person("John", "Wilson", , "first.last@example.com", role = c("aut", "cre")),
-        person("First name", "Last name", , "name@ed.ac.uk", role = c("aut")),
+    person("John", "Wilson", , "43386915+jmcvw@users.noreply.github.com", role = c("aut", "cre")),
+    person("First", "Last", , "first.last@example.com", role = "aut",
+           comment = c(ORCID = "Optional - YOUR-ORCID-ID"))
     )
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
