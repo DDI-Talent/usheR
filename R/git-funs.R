@@ -1,74 +1,103 @@
-# INSTRUCTIONS: to get most recent version of the classnotes, run this whole file
-# you can use ctrl+alt+enter (on PC) of cmd+alt+enter (on Mac),
-# or use R studio menu: Code > Run Region > Run all
+# problem statement:
+# - we want students to be able to get most recent notes into their noteable whenever we release them
+# - repo with notes is a public one, and students do not have editing rights (can;t commit and push)
+# - in python noteable there is a [+GitRepo] button which (to my understanding) does some magic described below
+# - in r we can use terminal, or the github panel, but that requires the ability to log into github, which we do not require from students, and it is possibly impossible/harder any more via username and password?
 
-library(magrittr)
-# TODO: could this be tidyverse? where do pipes come from
+# What does python's [+GitRepo] bython do to my understanding:
+# - without any need to commit/stash it will bring the new files into my cloned repo
+# - but it does NOT overwrite/remove work in files I have done so far
+# - so with that button student: gets newly added files from github, without losing files they olready edited
+# - in a rare occasion of merge conflict where both sides edited the same file: student locally (on noteable) and teacher on public github repo.... it will leave student's copy as it was, and bring the new teacher's copy into a file with an appended date like Badge03_28032024.ipynb
 
-# what's new on local?
-system("git status")
+# So the quest(ion) is: can we build a similar github flow in terminal, and then have a R script which runs those terminal scropts. So students would have an R script called RunThisToGetRecentNotes.R - contstrains: students does not need to login to github, teacher repo is public.
 
-# check what's new on the server?
-system("git fetch origin")
-
-# which files are affected?
-filesAffected <- system("git diff --name-status main origin/main", intern = TRUE)
-print("filesAffected")
-print(filesAffected)
-
-
-# separate those files into newly added, and modified:
-beginingOfChanged <- '^M\t'
-beginingOfNew <- '^A\t'
-
-filesAdded <- filesAffected %>%
-  grep(beginingOfNew, ., value = TRUE) %>%
-  sub(beginingOfNew, "", .)
-
-print("filesAdded")
-print(filesAdded)
-
-filesChanged <- filesAffected %>%
-  grep(beginingOfChanged, ., value = TRUE) %>%
-  sub(beginingOfChanged, "", .)
-
-print("filesChanged")
-print(filesChanged)
-
-# for newly added, just bring them over. For modified, create a backup, then bring them over.
-
-# some helper functions:
-
-# bring new file from git, then add and commit bringing it.
-bringFileFromGithub <- function(filename) {
-  system(paste0("git checkout origin/main -- ",filename))
-  system(paste0("git add ",filename))
-  system(paste0("git commit -m  'merging",filename,"'"))
+call_git <- function(..., stdout = '') {
+  system2('git', c(...), stdout = stdout)
 }
 
-# create local copy of a file, with current time at the back of a filename
-createABackupCopyOfFileWithDateInName <- function(filename) {
-  timeNow <- format(Sys.time(), "day%y%m%d-time%H%M%S")
-  replaceThis <- paste0("^(.*)(\\.{1}[^.]*)$")
-  withThis <- paste0("\\1-local-backup-",timeNow,"\\2")
-  newFilename <- sub(replaceThis, withThis, filename)
-  system(paste0("mv ",filename," ",newFilename))
-  system(paste0("git add ",newFilename))
-  system(paste0("git commit -m  'duplicated ",filename," as ",newFilename,"'"))
+
+check_git_for_modified_files <- function() {
+  call_git('fetch origin')
+  files_affected <- call_git('diff --name-status main origin/main', stdout = TRUE)
+
+  if (!is.null(files_affected)) {
+    files_affected <- files_affected |>
+      split(substr(files_affected, 1, 1)) |>
+      lapply(substring, 3)
+  }
+
+  files_affected
 }
 
-# create backup on modified ones
-for (fileName in filesChanged) {
-  createABackupCopyOfFileWithDateInName(fileName)
+
+
+bring_files_from_github <- function(filenames) {
+  call_git('checkout origin/main -- ', filenames)
+  call_git('add', filenames)
+  commit_message <- paste('"Merging',
+                          paste(filenames, collapse = '\n  '),
+                          '"',
+                          sep = '\n  ')
+  call_git('commit -m', commit_message, stdout = NULL)
+  invisible()
 }
 
-# bring over newest modified and added files
-for (fileName in append(filesChanged,filesAdded)) {
-  bringFileFromGithub(fileName)
+
+create_dated_backup <- function(filenames) {
+  time_now <- format(Sys.time(), 'day-%y%m%d_time-%H%M%S')
+  replace_this <- '^(.*)(\\.{1}[^.]*)$'
+  with_this <- paste0('\\1_local-backup_', time_now, '\\2')
+  new_filenames <- sub(replace_this, with_this, filenames)
+  file.rename(filenames, new_filenames)
+
+  rename_message <- paste('   ', filenames,
+                          '-->', new_filenames,
+                          collapse = '\n')
+
+  commit_message <- paste0('"Duplicated\n', rename_message, '"',
+                           sep = '', collapse = '')
+
+  call_git('add', paste(new_filenames, collapse = ' '))
+  call_git('commit', paste('-m', commit_message), stdout = NULL)
+  new_filenames
 }
 
-# cleanup, so we see less git complaints
-system("git commit -m 'finish a merge'")
 
-# check if everything went well
-system("git status")
+
+git_cleanup <- function(filenames) {
+  call_git('commit -m "Finish a merge"', stdout = NULL)
+  # call_git('status')
+  invisible()
+}
+
+
+
+#' only function to export
+#' update_from_github()
+update_from_github <- function() {
+    modified_filenames <- check_git_for_modified_files()
+
+    if (!is.null(modified_filenames[['M']])) {
+      cat('Backing up local changes...\n')
+      backup_file_names <- create_dated_backup(modified_filenames[['M']])
+    }
+
+    if (any(lengths(modified_filenames[c('A', 'M')]))) {
+      bring_files_from_github(unlist(modified_filenames[c('A', 'M')]))
+
+      cat('Completing merge...\n\n')
+      git_cleanup(backup_file_names)
+    }
+
+    if (length(modified_filenames[['M']]))
+      cat('Local files affected', modified_filenames[['M']], sep = '\n  ')
+
+    if (length(modified_filenames[['A']]))
+      cat('New files added', modified_filenames[['A']] %||% 'None', sep = '\n  ')
+
+    invisible()
+}
+
+
+
