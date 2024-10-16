@@ -1,6 +1,6 @@
 Package: usheR
 Title: Some helper functions for teaching
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
     person("John", "Wilson", , "43386915+jmcvw@users.noreply.github.com", role = c("aut", "cre")),
     person("First", "Last", , "first.last@example.com", role = "aut",
