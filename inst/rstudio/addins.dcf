@@ -1,0 +1,4 @@
+Name: Pull from GitHub
+Description: Pull changed or added files
+Binding: update_from_github
+Interactive: false
