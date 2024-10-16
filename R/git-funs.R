@@ -1,16 +1,40 @@
-# problem statement:
-# - we want students to be able to get most recent notes into their noteable whenever we release them
-# - repo with notes is a public one, and students do not have editing rights (can;t commit and push)
-# - in python noteable there is a [+GitRepo] button which (to my understanding) does some magic described below
-# - in r we can use terminal, or the github panel, but that requires the ability to log into github, which we do not require from students, and it is possibly impossible/harder any more via username and password?
+#' Pull changes from Github
+#'
+#' For use in Noteable. Students can get the most recent notes into their
+#' noteable environment when we release them. Files that have been changed
+#' locally, that may cause a conflict, are backed up with a timestamp added to
+#' their filename, e.g. `README.md` becomes
+#' `README_local-backup_day-xxxxxx_time-zzzzzz.md`
+#'
+#' @return Invisibly returns names of any files added or changed on the Git
+#'   origin
+#' @export
+#'
+update_from_github <- function() {
+  modified_filenames <- check_git_for_modified_files()
 
-# What does python's [+GitRepo] bython do to my understanding:
-# - without any need to commit/stash it will bring the new files into my cloned repo
-# - but it does NOT overwrite/remove work in files I have done so far
-# - so with that button student: gets newly added files from github, without losing files they olready edited
-# - in a rare occasion of merge conflict where both sides edited the same file: student locally (on noteable) and teacher on public github repo.... it will leave student's copy as it was, and bring the new teacher's copy into a file with an appended date like Badge03_28032024.ipynb
+  if (!is.null(modified_filenames[['M']])) {
+    cat('Backing up local changes...\n')
+    backup_file_names <- create_dated_backup(modified_filenames[['M']])
+  }
 
-# So the quest(ion) is: can we build a similar github flow in terminal, and then have a R script which runs those terminal scropts. So students would have an R script called RunThisToGetRecentNotes.R - contstrains: students does not need to login to github, teacher repo is public.
+  if (any(lengths(modified_filenames[c('A', 'M')]))) {
+    bring_files_from_github(unlist(modified_filenames[c('A', 'M')]))
+
+    cat('Completing merge...\n\n')
+    git_cleanup(backup_file_names)
+  }
+
+  if (length(modified_filenames[['M']]))
+    cat('Local files affected', modified_filenames[['M']], sep = '\n  ')
+
+  if (length(modified_filenames[['A']]))
+    cat('New files added', modified_filenames[['A']], sep = '\n  ')
+
+  invisible(modified_filenames)
+}
+
+
 
 call_git <- function(..., stdout = '') {
   system2('git', c(...), stdout = stdout)
@@ -70,34 +94,3 @@ git_cleanup <- function(filenames) {
   # call_git('status')
   invisible()
 }
-
-
-
-#' only function to export
-#' update_from_github()
-update_from_github <- function() {
-    modified_filenames <- check_git_for_modified_files()
-
-    if (!is.null(modified_filenames[['M']])) {
-      cat('Backing up local changes...\n')
-      backup_file_names <- create_dated_backup(modified_filenames[['M']])
-    }
-
-    if (any(lengths(modified_filenames[c('A', 'M')]))) {
-      bring_files_from_github(unlist(modified_filenames[c('A', 'M')]))
-
-      cat('Completing merge...\n\n')
-      git_cleanup(backup_file_names)
-    }
-
-    if (length(modified_filenames[['M']]))
-      cat('Local files affected', modified_filenames[['M']], sep = '\n  ')
-
-    if (length(modified_filenames[['A']]))
-      cat('New files added', modified_filenames[['A']] %||% 'None', sep = '\n  ')
-
-    invisible()
-}
-
-
-
