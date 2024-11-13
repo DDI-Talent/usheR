@@ -11,11 +11,11 @@
 #'
 #' \dontrun{
 #' sort_and_combine(c('ZZZ', 'AAA'))
-#' # [1] "AAA-ZZZ"
+#' # [1] "AAA~~ZZZ"
 #' }
 #'
 sort_and_combine <- function(pair) {
-  paste(sort(pair), collapse = '-')
+  paste(sort(pair), collapse = '~~')
 }
 
 #' Assess the "fitness" of a group
