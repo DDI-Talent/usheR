@@ -20,7 +20,7 @@ names), but will also work with a numeric vector.
 
 \dontrun{
 sort_and_combine(c('ZZZ', 'AAA'))
-# [1] "AAA-ZZZ"
+# [1] "AAA~~ZZZ"
 }
 
 }
