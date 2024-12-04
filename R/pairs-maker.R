@@ -11,11 +11,11 @@
 #'
 #' \dontrun{
 #' sort_and_combine(c('ZZZ', 'AAA'))
-#' # [1] "AAA-ZZZ"
+#' # [1] "AAA~~ZZZ"
 #' }
 #'
 sort_and_combine <- function(pair) {
-  paste(sort(pair), collapse = '-')
+  paste(sort(pair), collapse = '~~')
 }
 
 #' Assess the "fitness" of a group
@@ -116,5 +116,35 @@ create_pairs <- function(pool, group_size = 2,
     }
   }
 
-  c(record, list(winning_pairs))
+  structure(c(list(winning_pairs), record),
+            class = c('pairings', 'list'))
+
+
+}
+
+
+#' Print method for pair record
+#'
+#' @param x Pairings; list
+#' @param n Number of weeks to show
+#' @param ... Not used
+#'
+#' @return Invisibly returns x
+#' @export
+#' @keywords internal
+#'
+print.pairings <- function(x, n = 1, ...) {
+  n <- seq_len(n)
+  mapply(\(group, week) {
+    cat('\n\033[32mWeek', week, '\033[0m')
+
+
+    lapply(seq_along(group), \(i) {
+      cat('\n  \033[34m~ Group', i, '\033[0m\n    - ')
+      cat(strsplit(group[i], '~~')[[1]], sep = '\n    - ')
+    })
+
+
+  }, x[n], rev(seq_along(x))[n])
+  invisible(x)
 }
