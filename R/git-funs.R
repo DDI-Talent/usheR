@@ -57,14 +57,12 @@ check_git_for_modified_files <- function() {
 
 
 bring_files_from_github <- function(filenames) {
-  call_git('checkout origin/main -- ', filenames)
-  call_git('add', filenames)
-  commit_message <- paste('"Merging',
-                          paste(filenames, collapse = '\n  '),
-                          '"',
-                          sep = '\n  ')
+  quoted_filenames <- shQuote(unlist(filenames))
+  call_git('checkout origin/main -- ', quoted_filenames)
+  call_git('add', quoted_filenames)
+  commit_message <- paste0('"Merging updated files\n  ',
+                          paste0(filenames, collapse = '\n  '), '"')
   call_git('commit -m', commit_message, stdout = NULL)
-  invisible()
 }
 
 
@@ -92,5 +90,4 @@ create_dated_backup <- function(filenames) {
 git_cleanup <- function(filenames) {
   call_git('commit -m "Finish a merge"', stdout = NULL)
   # call_git('status')
-  invisible()
 }
