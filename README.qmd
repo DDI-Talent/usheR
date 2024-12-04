@@ -16,11 +16,13 @@ You can also include a comment with your ORCID number if you like, in the `comme
 To add your name use the following template and paste it into the `Authors@R:` field, inside the `c()`.
 
 ```
-person(given   = "Given name",
-       family  = "Family name",
-       email   = "email@example.com", role = "aut",
-       comment = c(ORCID = "Optional - YOUR-ORCID-ID"))
-    )
+person(
+  given   = "Given name",
+  family  = "Family name",
+  email   = "email@example.com", role = "aut",
+  comment = c(ORCID = "Optional - YOUR-ORCID-ID")
+)
+
 ```
 
 Then, commit and push.

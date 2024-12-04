@@ -13,7 +13,19 @@
 Some helper functions for teaching.
 
 When you add any functions to the package, also add your name to the
-`DESCRIPTION` file, and commit and push.
+`DESCRIPTION` file. You can also include a comment with your ORCID
+number if you like, in the `comment` field. To add your name use the
+following template and paste it into the `Authors@R:` field, inside the
+`c()`.
+
+    person(
+      given   = "Given name",
+      family  = "Family name",
+      email   = "email@example.com", role = "aut",
+      comment = c(ORCID = "Optional - YOUR-ORCID-ID")
+    )
+
+Then, commit and push.
 
 **Extra notes:**
 
