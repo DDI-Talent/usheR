@@ -20,10 +20,11 @@
 #'
 set_marking_timeline <- function(start) {
   start <- as.Date(start)
-  deadline <- start + 49
+  weekLength <- 7
+  deadline <- start + 7 * weekLength
   calibration <- deadline + 2
-  moderation <- calibration + 14
-  release <- deadline + 21
+  moderation <- calibration + 2 * weekLength
+  release <- deadline + 3 * weekLength
 
   timeline_df <- data.frame(
     event = c('start', 'deadline', 'calibration', 'moderation', 'release'),
