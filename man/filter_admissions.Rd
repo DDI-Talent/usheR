@@ -4,7 +4,7 @@
 \alias{filter_admissions}
 \title{Flter admissions xlsx spreadsheat}
 \usage{
-filter_admissions(spreadsheet_path)
+filter_admissions(new_admissions_spreadsheet, actioned_spreadsheet)
 }
 \arguments{
 \item{spreadsheet_path}{Character; Path to admissions spreadsheet}
@@ -16,7 +16,7 @@ Data frame filtered for DSHSC applications. programme applications.
 Reads the spreadsheet at the provided path. The spreadsheet should be stored
 in your personal OneDrive space. The column names are changed to be
 syntactic. The data are filtered to include only applications to "Data
-Science for Health and Social Care" programmes.
+Science for Health and Social Care" programmes (see \href{programme_code_lookup}{}.) and only those with a \verb{Qualification Status Decision} equal to "\verb{(SB) Ready for Decision}".
 }
 \details{
 No columns are removed, so the function should always work as intended, as long as the \verb{Programme Code} column is correct, and always called \verb{Programme Code}.
