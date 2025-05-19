@@ -1,0 +1,8 @@
+"programme_code","programme_description","programme_name","is_online","qualification","length_years","is_part_time"
+"PTMSCDSHSC1P","Data Science for Health and Social Care (Online Learning) (MSc) - 3 Years (Part-time)","Data Science for Health and Social Care ",TRUE,"MSc","3",TRUE
+"PTPGDDSHSC1P","Data Science for Health and Social Care (Online Learning) (PgDip) - 2 Years (Part-time)","Data Science for Health and Social Care ",TRUE,"PgDip","2",TRUE
+"PTPGCDSHSC1P","Data Science for Health and Social Care (Online Learning) (PgCert) - 1 Year (Part-time)","Data Science for Health and Social Care ",TRUE,"PgCert","1",TRUE
+"PTPDVDSHSC1U","PG Professional Development in Data Science for Health and Social Care (Online Learning) (ICL) - 2 Years","PG Professional Development in Data Science for Health and Social Care ",TRUE,"ICL","2",FALSE
+"PTMSCDSHSC1U","Data Science for Health and Social Care (Online Learning) (ICL MSc) - 6 Years","Data Science for Health and Social Care ",TRUE,"ICL MSc","6",FALSE
+"PTPGDDSHSC1U","Data Science for Health and Social Care (Online Learning) (ICL PgDip) - 4 Years","Data Science for Health and Social Care ",TRUE,"ICL PgDip","4",FALSE
+"PTPGCDSHSC1U","Data Science for Health and Social Care (Online Learning) (ICL PgCert) - 2 Years","Data Science for Health and Social Care ",TRUE,"ICL PgCert","2",FALSE

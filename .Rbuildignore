@@ -3,3 +3,4 @@
 ^_misc$
 ^LICENSE\.md$
 ^README\.qmd$
+^data-raw$
