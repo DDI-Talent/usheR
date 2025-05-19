@@ -1,0 +1,160 @@
+---
+title: "Review Data Science admissions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Review Data Science admissions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  eval = FALSE,
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+library(usheR)
+```
+
+## Set file paths
+
+Set file paths for
+
+1. Containing dir
+2. New admissions data
+3. Previously actioned admissions data
+
+Change the following paths to match your own system.
+
+```{r}
+od <- '~/OneDrive - University of Edinburgh/admissions'
+
+p_new <- file.path(od, 'PG004 PG applicant communications report-online 12-May-25.xlsx')
+
+p_old <- file.path(od, '22.04.25 applications.xlsx')
+```
+
+## Read in data
+
+Reading the data as usual, we get the entire admissions data set.
+
+No data are read in in this vignette, because the admissions data contain applicant's personal data.
+
+```{r}
+readxl::read_xlsx(p_new) |> 
+  dim()
+```
+
+This includes applications for all programmes.
+
+## Filter for the relevant programme
+
+The function `filter_admissions()` filters the admissions data for our own programme, and only "Ready for Decision" applications.
+If `filter_admissions()` is given a single file path, it will read in the admissions data and filter it for our programme
+
+```{r}
+# single file path to new admissions data
+filter_admissions(p_new) |> 
+  dim()
+```
+
+A second file path can also be supplied to also filter out the applications that were actioned previously.
+
+```{r}
+# two file paths to new and old admissions data
+d <- filter_admissions(p_new, p_old)
+dim(d)
+```
+
+If the dimensions are the same, then there are no previously actioned applications
+
+There is a summary function available that gives a count of applications, for each qualification, that have already been actioned, and those still pending.
+
+```{r}
+summary(d)
+```
+
+## Step through admissions
+
+To action the applications, the function `step_through_admissions()`, allows us to step through them one by one.
+
+```{r}
+# reduce data for demo purposes
+d <- filter_admissions(p_new, p_old) |> 
+  dplyr::slice(1:3, .by = qualification)
+```
+
+Press `Enter` to step through the admissions.
+
+```{r}
+step_through_admissions(d, 'jw')
+```
+
+Since we have to search EUCLID for a specific programme code, it is likely easier to focus on a single qualification at a time. The console output shows a colour-coded programme code. When the colour changes, we can choose to skip the current application by entering `#`.
+
+Step through the data again, this time action __only__ the PgDip applications (the blue ones). Note that we can assign the output. You can choose to create a new variable, or as here, overwrite the existing one. If you action a red MSc application, you can undo that by entering `u` (for undo). This will remove the last actioned application from the data set.
+
+```{r}
+# dd <- step_through_admissions(d, 'jw')
+
+d <- step_through_admissions(d, 'jw')
+
+d
+```
+
+Note that the `summary()` function can be called any time to see our progress.
+
+```{r}
+summary(d)
+```
+
+Run the last `step_through_admissions()` line again, this time actioning the MSc applications (the red ones) - again we will overwrite the existing data set.
+When the colour changes, press `x` to exit.
+
+```{r}
+d <- step_through_admissions(d, 'jw')
+d
+```
+
+## Save the data
+
+Note that the displayed data set is not how the actual data is saved. The displayed data set is a simplified representation of the data. Use `print(d, all_cols = TRUE)
+
+```{r}
+# The data still contains all the columns and rows we expect 
+dim(d)
+
+print(d, all_cols = TRUE)
+```
+
+When we are ready to save the data, we can write it as usual to csv, or xlsx (if we have the package `writexl` installed).
+The only thing to note is the usual Excel treatment of dates.
+
+```{r}
+save_path <- file.path(od, 'applications-i-just-reviewed.xlsx')
+if (file.exists(save_path)) {
+  file.remove(save_path)
+  cat('Deleted ', save_path)
+}
+
+summary(d)
+
+writexl::write_xlsx(d, save_path)
+```
+
+Notice that the original row ordering, and all original columns are preserved. The only thing that is added is a new column `actioned` (column `AM`) which contains the reviewer's initial, and the date of actioning.
+
+## Pick up from where you left off
+
+You can reload your data set, and continue from where you left off, again overwriting the variable `d` with the new data set, as many times as needed, until their are no more admissions to review.
+
+```{r}
+d_2 <- filter_admissions(save_path)
+summary(d_2)
+d_2 <- step_through_admissions(d_2, 'jw')
+```
+
+The resulting data set is ready to be uploaded to the Teams channel.

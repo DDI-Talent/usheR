@@ -1,6 +1,10 @@
 Package: usheR
 Title: Some helper functions for teaching
+<<<<<<< HEAD
 Version: 0.7.0
+=======
+Version: 0.4.2
+>>>>>>> f0c6074 (Improve admissions reviewing functionality)
 Authors@R: c(
     person("John", "Wilson", , "43386915+jmcvw@users.noreply.github.com", role = c("aut", "cre")),
     person("Nicola", "Burns", , "Nburns2@ed.ac.uk", role = c("aut"))
@@ -11,13 +15,16 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Suggests: 
+    knitr,
     rmarkdown,
-=======
-    dplyr,
-    readxl,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Depends: 
     R (>= 3.5)
 LazyData: true
+Imports: 
+    dplyr,
+    readr,
+    readxl
+VignetteBuilder: knitr
