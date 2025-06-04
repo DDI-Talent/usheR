@@ -152,33 +152,29 @@ print.pairings <- function(x, n = 1, ...) {
 
 #' Convert pairings list to data frame
 #'
-#' Converts the output of create_pairs() into a data frame with the columns Week (integer), Group (integer), and Pair (Character)
+#' Converts the output of create_pairs() into a data frame with the columns Week (Numeric), Group (Character), and Pairing (Character)
 #'
-#' @param pairings A list object returned from create_pairs()
+#' @param pairings A pairings list object returned from create_pairs()
 #'
-#' @returns A data frame with the columns Week, Group, and Pair
+#' @returns A data frame with the columns Week, Group, and Pairing
 #' @export
 #'
 #' @examples
-#' df <- pairings_to_df(pairings)
+#' df <- Convert_to_df(pairings)
 #'
-pairings_to_df <- function(pairings) {
-  rows <- list() #list for accumulating rows of final df
+Convert_to_df <- function(pairings) {
 
-  #Loop through list to extract each weeks data (1 to however many weeks etc)
-  for (week in seq_along(pairings)) { # seq_along() - index for each week
-    week_data <- pairings[[week]] # get groups for that week
+  df <- dplyr::bind_rows(pairings)
 
-    #Loop through each pair in each week and split students?
-    for (group in seq_along(week_data)) { # loop each group in that week
-      rows <- append(rows, list(data.frame(
-        Week = week,
-        Group = group,
-        Pair = week_data[group],
-        stringsAsFactors = F
-      )))
-    }
-  }
+  # add week
+  df$Week <- rev(seq_len(nrow(df)))
 
-  do.call(rbind.data.frame, rows) #stack rows list and converts to df
+  # Pivot into long format
+  df_pivot <- data.frame(tidyr::pivot_longer(
+    data = df,
+    cols = -Week,
+    names_to = "Group",
+    values_to = "Pairing"
+    )
+    )
 }
