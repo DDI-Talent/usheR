@@ -152,17 +152,17 @@ print.pairings <- function(x, n = 1, ...) {
 
 #' Convert pairings list to data frame
 #'
-#' Converts the output of create_pairs() into a data frame with the columns Week (Numeric), Group (Character), and Pairing (Character)
+#' Converts the output of create_pairs() into a data frame with the columns Week (Numeric), Group (Character), and Pairing (Character). Functionality to save the dataframe as a csv file.
 #'
 #' @param pairings A pairings list object returned from create_pairs()
 #'
-#' @returns A data frame with the columns Week, Group, and Pairing
+#' @returns A data frame with the columns Week, Group, and Pairing. Option to save the dataframe as a csv file.
 #' @export
 #'
 #' @examples
-#' df <- Convert_to_df(pairings)
+#' df <- Convert_to_df(pairings, TRUE, "My_Pairs.csv")
 #'
-Convert_to_df <- function(pairings) {
+Convert_to_df <- function(pairings, save_csv = FALSE, file_path = "X") {
 
   df <- dplyr::bind_rows(pairings)
 
@@ -175,6 +175,10 @@ Convert_to_df <- function(pairings) {
     cols = -Week,
     names_to = "Group",
     values_to = "Pairing"
-    )
-    )
+    ))
+
+  if(save_csv) {
+    write.csv(df_pivot, file_path, row.names = FALSE)
+  }
+
 }
