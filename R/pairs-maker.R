@@ -150,35 +150,44 @@ print.pairings <- function(x, n = 1, ...) {
 }
 
 
-#' Convert pairings list to data frame
+#' Convert pairings list to a tibble
 #'
-#' Converts the output of create_pairs() into a data frame with the columns Week (Numeric), Group (Character), and Pairing (Character). Functionality to save the dataframe as a csv file.
+#' Converts the output of `create_pairs()` into a tibble with the columns `week` (Integer), `group` (Character), and `pairing` (Character). Optionally saves the tibble as a CSV file if `file_path` is specified.
 #'
-#' @param pairings A pairings list object returned from create_pairs()
+#' @param pairings A pairings list object returned from `create_pairs()`.
+#' @param file_path Optional. A character string specifying a file path to save the output as a CSV file. IF NULL (default), no file is saved.
 #'
-#' @returns A data frame with the columns Week, Group, and Pairing. Option to save the dataframe as a csv file.
+#' @returns A tibble with the columns `week`, `group`, and `pairing`.
 #' @export
 #'
 #' @examples
-#' df <- Convert_to_df(pairings, TRUE, "My_Pairs.csv")
+#' ## Create a static roster
+#' roster <- LETTERS[1:10]
+#' ## Generate pairs
+#' pairings <- create_pairs(roster)
+#' ## Convert to tibble and save as CSV
+#' df <- Convert_to_df(pairings, "My_Pairs.csv")
 #'
-Convert_to_df <- function(pairings, save_csv = FALSE, file_path = "X") {
+convert_to_df <- function(pairings, file_path = NULL) {
 
   df <- dplyr::bind_rows(pairings)
 
   # add week
-  df$Week <- rev(seq_len(nrow(df)))
+  df$week <- rev(seq_len(nrow(df)))
 
   # Pivot into long format
-  df_pivot <- data.frame(tidyr::pivot_longer(
+  df_pivot <- tidyr::pivot_longer(
     data = df,
-    cols = -Week,
-    names_to = "Group",
-    values_to = "Pairing"
-    ))
+    cols = -week,
+    names_to = "group",
+    values_to = "pairing"
+    )
 
-  if(save_csv) {
+  if(!is.null(file_path)) {
     write.csv(df_pivot, file_path, row.names = FALSE)
   }
 
+  return(df_pivot)
+
 }
+
