@@ -66,35 +66,57 @@ fitness_function <- function(pairs, record) {
 #' @param record List; List of pairings from previous weeks
 #' @param population Integer; Number of simulated "organisms" to sample. I.e.
 #'   how long to spend searching for a better solution. Default is 1000.
+#' @param file_path Optional character string. If supplied, the final output will be saved as a CSV file to this path.
 #'
-#' @return List of pairs groupings. Each list element is a character vector of
-#'   pairs.
+#' @return A tibble in long format with columns `week`, `group`, and `pairing`.
 #' @export
 #'
 #' @examples
-#' ## for 1 week
-#' num_students <- 8
-#' create_pairs(LETTERS[1:num_students])
+#' # Example for three weeks of pairs
+#' # Create initial student pool
+#' roster2025 <- LETTERS[1:12]
 #'
-#' # ------------------------------------ #
+#' # Week 1: Create and save pairings
+#' weekOne <- create_pairs(roster2025, file_path = "weekOne2025.csv")
 #'
-#' ## loop for n_weeks weeks
-#' record <- NULL
-#' n_weeks <- 5
-#' for (i in 1:n_weeks){
-#'   # to simulate varying numbers each week
-#'   num_students <- sample(7:10, 1)
+#' # Week 2: Load previous weeks record and generate new pairings
+#' record <- readr::read_csv("weekOne2025.csv")
+#' weekTwo <- create_pairs(roster2025, record = record, file_path = "weekTwo2025.csv")
 #'
-#'   record <- create_pairs(LETTERS[1:num_students],
-#'                          record = record)
-#' }
+#' # Week 3: Continue pairing with updated record
+#' record <- readr::read_csv("weekTwo2025.csv")
+#' weekThree <- create_pairs(roster2025, record = record, file_path = "weekThree2025.csv")
 #'
-#' record
-#'
+#' # View week three pairings
+#' weekThree
 create_pairs <- function(pool, group_size = 2,
-                         record = NULL, population = 1000) {
+                         record = NULL, population = 1000,
+                         file_path = NULL) {
 
+  # convert record from tibble to list if needed
 
+  if (is.data.frame(record)) {
+    # convert to wide format
+    df_wide <- tidyr::pivot_wider(
+      data = record,
+      names_from = group,
+      values_from = pairing
+      )
+
+    # get rid of week column
+    df_wide$week <- NULL
+
+    # re-create as list
+    record <- lapply(seq_len(nrow(df_wide)), function(i) {
+      row <- as.character(df_wide[i, ])
+      names(row) <- names(df_wide)
+      row
+      })
+
+    # re-assign class
+    class(record) <- c("pairings", "list")
+
+    }
 
   pool_idx <- seq_along(pool)
   number_of_groups <- length(pool) %/% group_size
@@ -118,9 +140,26 @@ create_pairs <- function(pool, group_size = 2,
     }
   }
 
-  structure(c(list(winning_pairs), record),
-            class = c('pairings', 'list'))
+  # convert winning_pairs and record to tibble
+  df <- dplyr::bind_rows(c(list(winning_pairs), record))
 
+  # add week
+  df$week <- rev(seq_len(nrow(df)))
+
+  # Pivot into long format
+  df_pivot <- tidyr::pivot_longer(
+    data = df,
+    cols = -week,
+    names_to = "group",
+    values_to = "pairing"
+  )
+
+  # save as csv: optional
+  if(!is.null(file_path)) {
+    write.csv(df_pivot, file_path, row.names = FALSE)
+  }
+
+  return(df_pivot)
 
 }
 
