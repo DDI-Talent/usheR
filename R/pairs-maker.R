@@ -94,6 +94,8 @@ fitness_function <- function(pairs, record) {
 create_pairs <- function(pool, group_size = 2,
                          record = NULL, population = 1000) {
 
+
+
   pool_idx <- seq_along(pool)
   number_of_groups <- length(pool) %/% group_size
   group_names <- rep(seq_len(number_of_groups),
@@ -166,7 +168,7 @@ print.pairings <- function(x, n = 1, ...) {
 #' ## Generate pairs
 #' pairings <- create_pairs(roster)
 #' ## Convert to tibble and save as CSV
-#' df <- Convert_to_df(pairings, "My_Pairs.csv")
+#' df <- convert_to_df(pairings, "My_Pairs.csv")
 #'
 convert_to_df <- function(pairings, file_path = NULL) {
 
@@ -191,3 +193,48 @@ convert_to_df <- function(pairings, file_path = NULL) {
 
 }
 
+
+#' Convert pairings tibble to a list
+#'
+#' Convert pairings tibble created by `convert _to_df()` back into a list of named character vectors for use in `create_pairs()`.
+#'
+#' @param df a tibble with columns `week`, `group`, and `pairing`.
+#'
+#' @returns A list of named character vectors with class `pairings`, matching the necessary format of `create_pairs()`.
+#' @export
+#'
+#' @examples
+## Create a static roster
+#' roster <- LETTERS[1:10]
+#' ## Generate pairs
+#' pairings <- create_pairs(roster)
+#' ## Convert to tibble and save as CSV
+#' df <- convert_to_df(pairings, "My_Pairs.csv")
+#' ## Re-convert back to list
+#' list <- convert_to_list(df)
+#'
+convert_to_list <- function(df) {
+
+  # convert to wide format
+  df_wide <- tidyr::pivot_wider(
+    data = df,
+    names_from = group,
+    values_from = pairing
+  )
+
+  # get rid of week column
+  df_wide$week <- NULL
+
+  # re-create as list
+  pairings_list <- lapply(seq_len(nrow(df_wide)), function(i) {
+    row <- as.character(df_wide[i, ])
+    names(row) <- names(df_wide)
+    row
+  })
+
+  # re-assign class
+  class(pairings_list) <- c("pairings", "list")
+
+  return(pairings_list)
+
+}
