@@ -66,57 +66,33 @@ fitness_function <- function(pairs, record) {
 #' @param record List; List of pairings from previous weeks
 #' @param population Integer; Number of simulated "organisms" to sample. I.e.
 #'   how long to spend searching for a better solution. Default is 1000.
-#' @param file_path Optional character string. If supplied, the final output will be saved as a CSV file to this path.
 #'
-#' @return A tibble in long format with columns `week`, `group`, and `pairing`.
+#' @return List of pairs groupings. Each list element is a character vector of
+#'   pairs.
 #' @export
 #'
 #' @examples
-#' # Example for three weeks of pairs
-#' # Create initial student pool
-#' roster2025 <- LETTERS[1:12]
+#' #' ## for 1 week
+#' num_students <- 8
+#' create_pairs(LETTERS[1:num_students])
 #'
-#' # Week 1: Create and save pairings
-#' weekOne <- create_pairs(roster2025, file_path = "weekOne2025.csv")
+#' # ------------------------------------ #
 #'
-#' # Week 2: Load previous weeks record and generate new pairings
-#' record <- readr::read_csv("weekOne2025.csv")
-#' weekTwo <- create_pairs(roster2025, record = record, file_path = "weekTwo2025.csv")
+#' ## loop for n_weeks weeks
+#' record <- NULL
+#' n_weeks <- 5
+#' for (i in 1:n_weeks){
+#'   # to simulate varying numbers each week
+#'   num_students <- sample(7:10, 1)
 #'
-#' # Week 3: Continue pairing with updated record
-#' record <- readr::read_csv("weekTwo2025.csv")
-#' weekThree <- create_pairs(roster2025, record = record, file_path = "weekThree2025.csv")
+#'   record <- create_pairs(LETTERS[1:num_students],
+#'                          record = record)
+#' }
 #'
-#' # View week three pairings
-#' weekThree
+#' record
+#'
 create_pairs <- function(pool, group_size = 2,
-                         record = NULL, population = 1000,
-                         file_path = NULL) {
-
-  # convert record from tibble to list if needed
-
-  if (is.data.frame(record)) {
-    # convert to wide format
-    df_wide <- tidyr::pivot_wider(
-      data = record,
-      names_from = group,
-      values_from = pairing
-      )
-
-    # get rid of week column
-    df_wide$week <- NULL
-
-    # re-create as list
-    record <- lapply(seq_len(nrow(df_wide)), function(i) {
-      row <- as.character(df_wide[i, ])
-      names(row) <- names(df_wide)
-      row
-      })
-
-    # re-assign class
-    class(record) <- c("pairings", "list")
-
-    }
+                         record = NULL, population = 1000) {
 
   pool_idx <- seq_along(pool)
   number_of_groups <- length(pool) %/% group_size
@@ -140,26 +116,8 @@ create_pairs <- function(pool, group_size = 2,
     }
   }
 
-  # convert winning_pairs and record to tibble
-  df <- dplyr::bind_rows(c(list(winning_pairs), record))
-
-  # add week
-  df$week <- rev(seq_len(nrow(df)))
-
-  # Pivot into long format
-  df_pivot <- tidyr::pivot_longer(
-    data = df,
-    cols = -week,
-    names_to = "group",
-    values_to = "pairing"
-  )
-
-  # save as csv: optional
-  if(!is.null(file_path)) {
-    write.csv(df_pivot, file_path, row.names = FALSE)
-  }
-
-  return(df_pivot)
+  structure(c(list(winning_pairs), record),
+            class = c('pairings', 'list'))
 
 }
 
@@ -206,8 +164,13 @@ print.pairings <- function(x, n = 1, ...) {
 #' roster <- LETTERS[1:10]
 #' ## Generate pairs
 #' pairings <- create_pairs(roster)
-#' ## Convert to tibble and save as CSV
-#' df <- convert_to_df(pairings, "My_Pairs.csv")
+#' ## Convert to tibble
+#' df <- convert_to_df(pairings)
+#'
+#' \dontrun{
+#' # You can provide a file name if you wish to save the data frame as a csv file.
+#' df <- convert_to_df(pairings, file_path = "Pairs.csv")
+#' }
 #'
 convert_to_df <- function(pairings, file_path = NULL) {
 
@@ -243,14 +206,20 @@ convert_to_df <- function(pairings, file_path = NULL) {
 #' @export
 #'
 #' @examples
-## Create a static roster
+#' ## Create a static roster
 #' roster <- LETTERS[1:10]
 #' ## Generate pairs
 #' pairings <- create_pairs(roster)
-#' ## Convert to tibble and save as CSV
-#' df <- convert_to_df(pairings, "My_Pairs.csv")
+#' ## Convert to tibble
+#' df <- convert_to_df(pairings)
 #' ## Re-convert back to list
 #' list <- convert_to_list(df)
+#'
+#' \dontrun{
+#' # You can provide a file name if you wish to save the data frame as a csv file.
+#' df <- convert_to_df(pairings, file_path = "Pairs.csv")
+#' }
+#'
 #'
 convert_to_list <- function(df) {
 
@@ -277,3 +246,69 @@ convert_to_list <- function(df) {
   return(pairings_list)
 
 }
+
+
+
+
+
+#' User generation of student pairs
+#'
+#' A wrapper function that takes a list of students and returns optimally paired groups
+#' while minimising duplicate pairings from previous sessions.
+#'
+#' This function automatically handles conversion of pairing history from a data frame (if needed; from `convert_to_list()`), generates new
+#' pairings using a simulation algorithm (from `create_pairs()`), and outputs the results as a data frame (from `convert_to_df()`).
+#' Optionally saves the results as a CSV file.
+#'
+#' @param class_list Student pool; Vector of student names.
+#' @param group_size Integer; Number of students per group. Default number is 2.
+#' @param population Integer; Number of simulated "organisms" to sample. I.e. how long to spend searching for a better solution. Default is 1000.
+#' @param pair_history Record. A pairing history either as a `pairings` list (from `create_pairs()`) or as a data frame (from `convert_to_df()`). If NULL, starts fresh.
+#' @param file_path Optional character string. If supplied, the final output will be saved as a CSV file to this path.
+#'
+#' @returns A data frame (tibble) with the columns: `week`, `group`, and `pairing`.
+#' @export
+#'
+#' @examples
+#' # create class roster
+#' roster <- LETTERS[1:10]
+#' # Simulate pairings for week 1
+#' firstWeek <- student_pairs(class_list = roster, group_size = 2)
+#' # Simulate pairings for week 2, using week 1 as pairs history
+#' secondWeek <- student_pairs(roster, pair_history = week1, group_size = 2)
+#'
+#'
+#' \dontrun{
+#' # You can provide a file name if you wish to save the data frame as a csv file.
+#' firstWeek <- student_pairs(class_list = roster, group_size = 2, file_path = "Pairs.csv")
+#' }
+
+student_pairs <- function(class_list, group_size = 2, population = 1000,
+                          pair_history = NULL,
+                          file_path = NULL){
+
+  # convert to list if dataframe
+  if(!is.null(pair_history)) {
+    if(is.data.frame(pair_history)) {
+      pair_history <- convert_to_list(pair_history)
+      }
+  }
+
+  # generate new pairings
+  new_pairs <- create_pairs(pool = class_list,
+                            group_size = group_size,
+                            record = pair_history,
+                            population = population)
+
+  # convert to data frame
+  dataframe <- convert_to_df(new_pairs)
+
+  # save as csv if needed
+  if(!is.null(file_path)) {
+    write.csv(dataframe, file_path, row.names = FALSE)
+    }
+
+  return(dataframe)
+
+}
+
