@@ -312,3 +312,43 @@ student_pairs <- function(class_list, group_size = 2, population = 1000,
 
 }
 
+
+
+#' Get present students
+#'
+#' Helper function to return the list of present students, based on either those present or absent.
+#'
+#' @param full_class A character vector of all student names in the class, or a data frame containing a `name` column.
+#' @param present Optional character vector of students who are present.
+#' @param absent Optional character vector of students who are absent.
+#'
+#' @returns A character vector of students who are present.
+#' @export
+#'
+#' @examples
+#' # Create full class list as vector input (note can also be done as dataframe)
+#' full_class <- LETTERS[1:26]
+#' # If only some student are present:
+#' present <- get_present_students(full_class, present = c("A", "B", "C"))
+#' # If majority student present:
+#' present <- get_present_students(full_class, absent = c("D", "E"))
+#'
+get_present_students <- function(full_class, present = NULL, absent = NULL){
+
+  # If it is a data frame, extract the `name` column
+  if (is.data.frame(full_class)) {
+    full_class <- full_class$name
+  }
+
+  # Return present students
+  if (!is.null(present)) {
+    return(intersect(full_class, present))
+  }
+
+  # Return present students by removing absent
+  if (!is.null(absent)) {
+    return(setdiff(full_class, absent))
+  }
+
+}
+
