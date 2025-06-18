@@ -3,7 +3,7 @@ Title: Some helper functions for teaching
 Version: 0.4.0
 Authors@R: c(
     person("John", "Wilson", , "43386915+jmcvw@users.noreply.github.com", role = c("aut", "cre")),
-    person("Nicola", "Burns", , "Nburns2@ed.ac.uk", role = c("aut", "ctb"))
+    person("Nicola", "Burns", , "Nburns2@ed.ac.uk", role = c("aut"))
     )
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
