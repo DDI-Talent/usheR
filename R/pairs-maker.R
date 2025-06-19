@@ -31,8 +31,8 @@ sort_and_combine <- function(pair) {
 #' \dontrun{
 #'
 #' record <- list(
-#'               c('AAA-BBB','WWW-XXX'),
-#'               c('YYY-ZZZ', 'CCC-DDD')
+#'               c('AAA~~BBB','WWW~~XXX'),
+#'               c('YYY~~ZZZ', 'CCC~~DDD')
 #'           )
 #'
 #' pairs <- list(
@@ -260,10 +260,10 @@ convert_to_list <- function(df) {
 #' pairings using a simulation algorithm (from `create_pairs()`), and outputs the results as a data frame (from `convert_to_df()`).
 #' Optionally saves the results as a CSV file.
 #'
-#' @param class_list Student pool; Vector of student names.
+#' @param attendance A tibble with columns `name` and `present`, as returned by `take_attendance()`.
 #' @param group_size Integer; Number of students per group. Default number is 2.
 #' @param population Integer; Number of simulated "organisms" to sample. I.e. how long to spend searching for a better solution. Default is 1000.
-#' @param pair_history Record. A pairing history either as a `pairings` list (from `create_pairs()`) or as a data frame (from `convert_to_df()`). If NULL, starts fresh.
+#' @param pair_history Optional Record. A pairing history either as a `pairings` list (from `create_pairs()`) or as a data frame (from `convert_to_df()`). If NULL, starts fresh.
 #' @param file_path Optional character string. If supplied, the final output will be saved as a CSV file to this path.
 #'
 #' @returns A data frame (tibble) with the columns: `week`, `group`, and `pairing`.
@@ -272,18 +272,27 @@ convert_to_list <- function(df) {
 #' @examples
 #' # create class roster
 #' roster <- LETTERS[1:10]
+#' # get who is present
+#' present <- 1:8
+#' # take attendance
+#' attendance <- take_attendance(full_class = roster, present_students = present)
 #' # Simulate pairings for week 1
-#' firstWeek <- student_pairs(class_list = roster, group_size = 2)
+#' week1 <- student_pairs(attendance)
 #' # Simulate pairings for week 2, using week 1 as pairs history
-#' secondWeek <- student_pairs(roster, pair_history = week1, group_size = 2)
-#'
+#' week2 <- student_pairs(attendance, pair_history = week1)
 #'
 #' \dontrun{
 #' # You can provide a file name if you wish to save the data frame as a csv file.
 #' firstWeek <- student_pairs(class_list = roster, group_size = 2, file_path = "Pairs.csv")
 #' }
+<<<<<<< Updated upstream
 
 student_pairs <- function(class_list, group_size = 2, population = 1000,
+=======
+student_pairs <- function(attendance,
+                          group_size = 2,
+                          population = 1000,
+>>>>>>> Stashed changes
                           pair_history = NULL,
                           file_path = NULL){
 
@@ -303,25 +312,27 @@ student_pairs <- function(class_list, group_size = 2, population = 1000,
   # convert to data frame
   dataframe <- convert_to_df(new_pairs)
 
+  # Remove NA rows (e.g., groups in susequent weeks that cannot be populated)
+  dataframe <- dataframe[!is.na(dataframe$pairing), ]
+
   # save as csv if needed
-  if(!is.null(file_path)) {
-    write.csv(dataframe, file_path, row.names = FALSE)
-    }
+  save_output(dataframe, file_path, append = FALSE)
 
   return(dataframe)
 
 }
 
 
-
-#' Get present students
+#' Save a data frame to CSV
 #'
-#' Helper function to return the list of present students, based on either those present or absent.
+#' Saves or appends a data frame to a specified file path.
+#' If `append = TRUE`, combines the new data with any existing data in the file.
 #'
-#' @param full_class A character vector of all student names in the class, or a data frame containing a `name` column.
-#' @param present Optional character vector of students who are present.
-#' @param absent Optional character vector of students who are absent.
+#' @param dataframe The data frame to save.
+#' @param file_path Path to the CSV file. If `NULL`, nothing is saved.
+#' @param append Logical. If TRUE, appends to existing file; if FALSE, overwrites (default: FALSE).
 #'
+<<<<<<< Updated upstream
 #' @returns A character vector of students who are present.
 #' @export
 #'
@@ -352,3 +363,52 @@ get_present_students <- function(full_class, present = NULL, absent = NULL){
 
 }
 
+=======
+#' @returns Returns the saved data frame.
+#' @export
+#'
+#' @examples
+#' # Create a class list
+#' class_list <- LETTERS[1:26]
+#' # Below is an example for saving
+#' \dontrun{
+#' # Week 1: take attendance
+#' week1 <- take_attendance(full_class = class_list,
+#'                          present_students = c(1, 2, 4),
+#'                          file_path = "attendance_log_W1.csv")  # saved using save_output()
+#'
+#' # Week 1: generate student pairs and save
+#' pairsW1 <- student_pairs(attendance = week1,
+#'                        group_size = 2,
+#'                        file_path = "pairs_week1.csv")  # saved using save_output()
+#'
+#' # Week 2: take attendance and append to same file
+#' week2 <- take_attendance(full_class = class_list,
+#'                          present_students = c(1, 3, 4, 5, 7, 10, 15, 17),
+#'                          file_path = "attendance_log_W2.csv")
+#'
+#' # Week 2: generate student pairs and save
+#' pairsW2 <- student_pairs(attendance = week2,
+#'                        pair_history = pairsW1,
+#'                        group_size = 2,
+#'                        file_path = "pairs_week2.csv")
+#'
+#'}
+save_output <- function(dataframe,
+                        file_path,
+                        append = FALSE) {
+
+  if (!is.null(file_path)) {
+    if (append && file.exists(file_path)) {
+      existing <- readr::read_csv(file_path, show_col_types = FALSE)
+      dataframe <- dplyr::bind_rows(existing, dataframe)
+    }
+
+    write.csv(dataframe, file_path, row.names = FALSE)
+
+  }
+
+  return(dataframe)
+
+}
+>>>>>>> Stashed changes
