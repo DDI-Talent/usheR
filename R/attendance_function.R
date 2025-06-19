@@ -41,7 +41,7 @@ take_attendance <- function(full_class,
 
   # If no session label, use date and time
   if (is.null(session_id)) {
-    session_id <- format(Sys.time(), "%d-%m-%y_%H%M")
+    session_id <- Sys.time()
   }
 
   # Create logical vector for attendance
@@ -54,9 +54,34 @@ take_attendance <- function(full_class,
     session = session_id
   )
 
-  # Save - default is to append
+  # Save - default is to NOT append
   attendance <- save_output(attendance, file_path)
 
   return(attendance)
+
+}
+
+
+
+
+
+
+
+
+save_output <- function(dataframe,
+                        file_path,
+                        append = FALSE) {
+
+  if (!is.null(file_path)) {
+    if (append && file.exists(file_path)) {
+      existing <- readr::read_csv(file_path, show_col_types = FALSE)
+      dataframe <- dplyr::bind_rows(existing, dataframe)
+    }
+
+    write.csv(dataframe, file_path, row.names = FALSE)
+
+  }
+
+  return(dataframe)
 
 }
