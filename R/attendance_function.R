@@ -19,10 +19,12 @@
 #' @export
 #'
 #' @examples
-#' # Full class list
-#' full_class <- LETTERS[1:26]
+#' # Load USJudgeRatings dataset and use as full class list
+#' full_class <- USJudgeRatings
+#' # Create name column
+#' full_class$name <- rownames(full_class)
 #' # print full class list to view row indices
-#' print(full_class)
+#' print(full_class$name)
 #' # suppose students 1:9, 15, 18, 20:22 are present.
 #' present <- c(1:9, 15, 18, 20:22)
 #' # take attendance
