@@ -21,7 +21,7 @@
 #' @examples
 #' # Load USJudgeRatings dataset and use as full class list
 #' full_class <- USJudgeRatings
-#' # Create name column
+#' # Create name column to simulate real class list
 #' full_class$name <- rownames(full_class)
 #' # print full class list to view row indices
 #' print(full_class$name)
