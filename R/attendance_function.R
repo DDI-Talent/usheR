@@ -47,7 +47,6 @@ take_attendance <- function(full_class,
   # Create logical vector for attendance
   present_logical <- seq_along(full_class) %in% present_students
 
-  # Create attendance tibble
   attendance <- tibble::tibble(
     name = full_class,
     present = present_logical,
@@ -67,7 +66,45 @@ take_attendance <- function(full_class,
 
 
 
-
+#' Save a data frame to CSV
+#'
+#' Saves or appends a data frame to a specified file path.
+#' If `append = TRUE`, combines the new data with any existing data in the file.
+#'
+#' @param dataframe The data frame to save.
+#' @param file_path Path to the CSV file. If `NULL`, nothing is saved.
+#' @param append Logical. If TRUE, appends to existing file; if FALSE, overwrites (default: FALSE).
+#'
+#' @returns Returns the saved data frame.
+#' @export
+#'
+#' @examples
+#' # Create a class list
+#' class_list <- LETTERS[1:26]
+#' # Below is an example for saving
+#' \dontrun{
+#' # Week 1: take attendance
+#' week1 <- take_attendance(full_class = class_list,
+#'                          present_students = c(1, 2, 4),
+#'                          file_path = "attendance_log_W1.csv")  # saved using save_output()
+#'
+#' # Week 1: generate student pairs and save
+#' pairsW1 <- student_pairs(attendance = week1,
+#'                        group_size = 2,
+#'                        file_path = "pairs_week1.csv")  # saved using save_output()
+#'
+#' # Week 2: take attendance and append to same file
+#' week2 <- take_attendance(full_class = class_list,
+#'                          present_students = c(1, 3, 4, 5, 7, 10, 15, 17),
+#'                          file_path = "attendance_log_W2.csv")
+#'
+#' # Week 2: generate student pairs and save
+#' pairsW2 <- student_pairs(attendance = week2,
+#'                        pair_history = pairsW1,
+#'                        group_size = 2,
+#'                        file_path = "pairs_week2.csv")
+#'
+#'}
 save_output <- function(dataframe,
                         file_path,
                         append = FALSE) {
