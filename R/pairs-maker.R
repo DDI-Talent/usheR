@@ -285,14 +285,9 @@ convert_to_list <- function(df) {
 #' # You can provide a file name if you wish to save the data frame as a csv file.
 #' firstWeek <- student_pairs(class_list = roster, group_size = 2, file_path = "Pairs.csv")
 #' }
-<<<<<<< Updated upstream
-
-student_pairs <- function(class_list, group_size = 2, population = 1000,
-=======
 student_pairs <- function(attendance,
                           group_size = 2,
                           population = 1000,
->>>>>>> Stashed changes
                           pair_history = NULL,
                           file_path = NULL){
 
@@ -332,38 +327,6 @@ student_pairs <- function(attendance,
 #' @param file_path Path to the CSV file. If `NULL`, nothing is saved.
 #' @param append Logical. If TRUE, appends to existing file; if FALSE, overwrites (default: FALSE).
 #'
-<<<<<<< Updated upstream
-#' @returns A character vector of students who are present.
-#' @export
-#'
-#' @examples
-#' # Create full class list as vector input (note can also be done as dataframe)
-#' full_class <- LETTERS[1:26]
-#' # If only some student are present:
-#' present <- get_present_students(full_class, present = c("A", "B", "C"))
-#' # If majority student present:
-#' present <- get_present_students(full_class, absent = c("D", "E"))
-#'
-get_present_students <- function(full_class, present = NULL, absent = NULL){
-
-  # If it is a data frame, extract the `name` column
-  if (is.data.frame(full_class)) {
-    full_class <- full_class$name
-  }
-
-  # Return present students
-  if (!is.null(present)) {
-    return(intersect(full_class, present))
-  }
-
-  # Return present students by removing absent
-  if (!is.null(absent)) {
-    return(setdiff(full_class, absent))
-  }
-
-}
-
-=======
 #' @returns Returns the saved data frame.
 #' @export
 #'
@@ -411,4 +374,3 @@ save_output <- function(dataframe,
   return(dataframe)
 
 }
->>>>>>> Stashed changes
