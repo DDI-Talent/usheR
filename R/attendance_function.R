@@ -6,8 +6,10 @@
 #' a logical indicator of presence (`TRUE`/`FALSE`), and a session ID.
 #'
 #' If no session ID is provided, the function automatically uses the current date and time in the format
-#' `"dd-mm-yy_HHMM"`. You can also optionally write the output to a CSV file using the `file_path`
-#' argument. By setting `append = TRUE`, you can add to an existing CSV file (e.g., for multiple weeks).
+#' `"dd-mm-yy_HHMM"`. You can optionally write the output to a CSV file using the file_path argument.
+#' If append = FALSE (default), the file will be created or overwritten.
+#' If append = TRUE, the new attendance will be added to the bottom of an existing attendance log.
+#' This allows you to accumulate attendance across sessions in a single file.
 #'
 #' @param full_class A character vector of student names or a data frame with a `name` column.
 #' @param present_students A numeric vector of indices corresponding to students who were present.
@@ -21,10 +23,7 @@
 #'
 #' @examples
 #' # Load USJudgeRatings dataset and use as full class list
-#' class_list <- USJudgeRatings
-#'
-#' # Create name column to simulate real class list
-#' class_list$name <- rownames(class_list)
+#' class_list <- data.frame(name = rownames(USJudgeRatings))
 #'
 #' # print full class list to view row indices
 #' print(class_list$name)
@@ -39,9 +38,9 @@
 #'                               present_students = c(1:5, 12, 14),
 #'                               session_id = "CourseX_Week2")
 #'
-#' # You can also optionally save the attendnace to csv files, or append each week
+#' # You can also optionally save the attendance to csv files, or append each week
 #' \dontrun{
-#' # Save Week 1 to CSV (overwrites or creates new file)
+#' # Save Week 1 to CSV (creates new file)
 #' week1 <- take_attendance(full_class = class_list,
 #'                          present_students = 1:5,
 #'                          session_id = "Week_1",
@@ -109,10 +108,7 @@ take_attendance <- function(full_class,
 #'
 #' @examples
 #' # Load USJudgeRatings dataset and use as full class list
-#' class_list <- USJudgeRatings
-#'
-#' # Create name column to simulate real class list
-#' class_list$name <- rownames(class_list)
+#' class_list <- data.frame(name = rownames(USJudgeRatings))
 #'
 #' # print full class list to view row indices
 #' print(class_list$name)
