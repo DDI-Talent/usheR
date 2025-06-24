@@ -149,39 +149,43 @@ print.pairings <- function(x, n = 1, ...) {
 }
 
 
-#' Convert pairings list to a tibble
+#' Convert pairings list to tibble
 #'
-#' Converts the output of `create_pairs()` into a tibble with the columns `week` (Integer), `group` (Character), and `pairing` (Character). Optionally saves the tibble as a CSV file if `file_path` is specified.
+#' A helper function to take a list of pairings returned by `create_pairs()`, and convert it into a tidy tibble
+#' with one row per group per week.
+#' Optionally, the tibble can be saved as a CSV file if `file_path` is specified.
 #'
-#' @param pairings A pairings list object returned from `create_pairs()`.
-#' @param file_path Optional. A character string specifying a file path to save the output as a CSV file. IF NULL (default), no file is saved.
+#' @param pairings A pairings list object returned by `create_pairs()`.
+#' @param file_path Optional. A character string specifying a file path to save the output tibble as a CSV file. IF `NULL` (default), no file is saved.
 #'
-#' @returns A tibble with the columns `week`, `group`, and `pairing`.
-#' @export
+#' @returns A tibble with the columns : `week` (Integer), `group` (Character), and `pairing` (Character).
 #'
 #' @examples
-#' ## Create a static roster
+#' # Create a static roster
+#' ## Note this input needs to be a list for `create_pairs()`
 #' roster <- LETTERS[1:10]
-#' ## Generate pairs
+#'
+#' # Generate pairs
 #' pairings <- create_pairs(roster)
-#' ## Convert to tibble
-#' df <- convert_to_df(pairings)
+#'
+#' # Convert to tibble
+#' data_frame <- convert_to_df(pairings)
 #'
 #' \dontrun{
-#' # You can provide a file name if you wish to save the data frame as a csv file.
-#' df <- convert_to_df(pairings, file_path = "Pairs.csv")
+#' # Save to CSV
+#' data_frame <- convert_to_df(pairings, file_path = "Pairs.csv")
 #' }
 #'
-convert_to_df <- function(pairings, file_path = NULL) {
+convert_to_df <- function(pairings,
+                          file_path = NULL) {
 
-  df <- dplyr::bind_rows(pairings)
+  data_frame <- dplyr::bind_rows(pairings)
 
-  # add week
-  df$week <- rev(seq_len(nrow(df)))
+  # Add week labels in reverse so Week 1 is first row group
+  data_frame$week <- rev(seq_len(nrow(data_frame)))
 
-  # Pivot into long format
   df_pivot <- tidyr::pivot_longer(
-    data = df,
+    data = data_frame,
     cols = -week,
     names_to = "group",
     values_to = "pairing"
@@ -196,44 +200,41 @@ convert_to_df <- function(pairings, file_path = NULL) {
 }
 
 
-#' Convert pairings tibble to a list
+#' Convert pairings tibble to list
 #'
-#' Convert pairings tibble created by `convert _to_df()` back into a list of named character vectors for use in `create_pairs()`.
+#' A helper function to convert a pairings tibble (created by `convert_to_df()`) back into a list format compatible with `create_pairs()`.
+#' The tibble must contain the columns `week`, `group`, and `pairing`, as produced by `convert_to_df()`.
 #'
-#' @param df a tibble with columns `week`, `group`, and `pairing`.
+#' @param df A tibble with columns `week`, `group`, and `pairing`: the output of `convert_to_df()`.
 #'
-#' @returns A list of named character vectors with class `pairings`, matching the necessary format of `create_pairs()`.
-#' @export
+#' @returns A list of named character vectors with class `pairings`, matching the structure expected by `create_pairs()`.
 #'
 #' @examples
-#' ## Create a static roster
+#' # Create a static roster
+#' ## Note this input needs to be a list for `create_pairs()`
 #' roster <- LETTERS[1:10]
-#' ## Generate pairs
+#'
+#' # Generate pairs
 #' pairings <- create_pairs(roster)
-#' ## Convert to tibble
-#' df <- convert_to_df(pairings)
-#' ## Re-convert back to list
-#' list <- convert_to_list(df)
 #'
-#' \dontrun{
-#' # You can provide a file name if you wish to save the data frame as a csv file.
-#' df <- convert_to_df(pairings, file_path = "Pairs.csv")
-#' }
+#' # Convert to tibble
+#' data_frame <- convert_to_df(pairings)
 #'
+#' # Convert back to list format
+#' roster_list <- convert_to_list(data_frame)
 #'
-convert_to_list <- function(df) {
+convert_to_list <- function(data_frame) {
 
-  # convert to wide format
   df_wide <- tidyr::pivot_wider(
-    data = df,
+    data = data_frame,
     names_from = group,
     values_from = pairing
   )
 
-  # get rid of week column
+  # Drop the 'week' column as not used in `create_pairs()` list
   df_wide$week <- NULL
 
-  # re-create as list
+  # re-convert each row into a named character vector
   pairings_list <- lapply(seq_len(nrow(df_wide)), function(i) {
     row <- as.character(df_wide[i, ])
     names(row) <- names(df_wide)
@@ -251,39 +252,54 @@ convert_to_list <- function(df) {
 
 
 
-#' User generation of student pairs
+#' User generation of student pairs based on attendance
 #'
-#' A wrapper function that takes a list of students and returns optimally paired groups
-#' while minimising duplicate pairings from previous sessions.
+#' A wrapper function that generates optimised student pairs from the list of present students
+#' using the `create_pairs()` algorithm. This function minimises repeated pairings by incorporating
+#' previous pairing history (if provided) and outputs results in tidy data frame format.
 #'
-#' This function automatically handles conversion of pairing history from a data frame (if needed; from `convert_to_list()`), generates new
-#' pairings using a simulation algorithm (from `create_pairs()`), and outputs the results as a data frame (from `convert_to_df()`).
-#' Optionally saves the results as a CSV file.
+#' The pairing history can be supplied as either:
+#' - A list with class `pairings` (output of `create_pairs()` or `convert_to_list()`), or
+#' - A data frame with columns `week`, `group`, and `pairing` (output of `convert_to_df()`).
+#'
+#' Optionally, the resulting pairings can be saved to a CSV file via `file_path`.
+#'
 #'
 #' @param attendance A tibble with columns `name` and `present`, as returned by `take_attendance()`.
 #' @param group_size Integer; Number of students per group. Default number is 2.
 #' @param population Integer; Number of simulated "organisms" to sample. I.e. how long to spend searching for a better solution. Default is 1000.
-#' @param pair_history Optional Record. A pairing history either as a `pairings` list (from `create_pairs()`) or as a data frame (from `convert_to_df()`). If NULL, starts fresh.
-#' @param file_path Optional character string. If supplied, the final output will be saved as a CSV file to this path.
+#' @param pair_history Optional. Pairing history to minimise repeated pairings. Can be a `pairings` list or a data frame.
+#' @param file_path Optional. A character string to save the result as a CSV file. If `NULL`, no file is saved.
 #'
-#' @returns A data frame (tibble) with the columns: `week`, `group`, and `pairing`.
+#' @returns A tibble with columns: `week`, `group`, and `pairing`.
 #' @export
 #'
 #' @examples
-#' # create class roster
-#' roster <- LETTERS[1:10]
-#' # get who is present
-#' present <- 1:8
-#' # take attendance
-#' attendance <- take_attendance(full_class = roster, present_students = present)
-#' # Simulate pairings for week 1
-#' week1 <- student_pairs(attendance)
-#' # Simulate pairings for week 2, using week 1 as pairs history
-#' week2 <- student_pairs(attendance, pair_history = week1)
+#' # Simulate a class list
+#' class_list <- data.frame(name = rownames(USJudgeRatings))
+#'
+#' # Take attendance for week 1 (students 1 to 8 are present)
+#' attendance <- take_attendance(full_class = class_list,
+#'                               present_students = 1:8,
+#'                               session_id = "Week_1")
+#'
+#' # Generate pairings for Week 1
+#' pairs_week1 <- student_pairs(attendance = attendance, group_size = 2)
+#'
+#' # Take attendance for Week 2
+#' attendance2 <- take_attendance(full_class = class_list,
+#'                                present_students = c(2, 3, 6, 7, 9, 10),
+#'                                session_id = "Week_2")
+#'
+#' # Generate pairings using Week 1 as history
+#' pairs_week2 <- student_pairs(attendance = attendance2,
+#'                              pair_history = pairs_week1,
+#'                              group_size = 2)
 #'
 #' \dontrun{
-#' # You can provide a file name if you wish to save the data frame as a csv file.
-#' firstWeek <- student_pairs(class_list = roster, group_size = 2, file_path = "Pairs.csv")
+#' # Save to CSV file
+#' student_pairs(attendance = attendance,
+#'               file_path = "student_pairs.csv")
 #' }
 student_pairs <- function(attendance,
                           group_size = 2,
@@ -291,31 +307,32 @@ student_pairs <- function(attendance,
                           pair_history = NULL,
                           file_path = NULL){
 
-  # convert to list if dataframe
+  # Handle pairing history if supplied as data frame - re-convert to list
   if(!is.null(pair_history)) {
     if(is.data.frame(pair_history)) {
       pair_history <- convert_to_list(pair_history)
       }
   }
 
-  # generate new pairings
+  # Extract present students from attendance data
+  class_list <- attendance$name[attendance$present]
+
   new_pairs <- create_pairs(pool = class_list,
                             group_size = group_size,
                             record = pair_history,
                             population = population)
 
-  # convert to data frame
-  dataframe <- convert_to_df(new_pairs)
+  data_frame <- convert_to_df(new_pairs)
 
   # In some weeks, there may be fewer students than expected, resulting in underfilled groups.
   # This creates NA entries in the pairing column for groups that couldn't be formed (e.g., group 5 or 6 in a week with only enough students for 4 groups).
   # These rows are removed here to ensure only valid pairings are included.
-  dataframe <- dataframe[!is.na(dataframe$pairing), ]
+  data_frame <- data_frame[!is.na(data_frame$pairing), ]
 
-  # save as csv if needed
-  save_output(dataframe, file_path, append = FALSE)
+  # Save if file_path is provided
+  save_output(data_frame, file_path, append = FALSE)
 
-  return(dataframe)
+  return(data_frame)
 
 }
 
@@ -374,5 +391,71 @@ save_output <- function(dataframe,
   }
 
   return(dataframe)
+
+}
+
+
+
+#' Taking student attendance
+#'
+#' This function creates and optionally saves a record of student attendance for a given session.
+#' You provide a class list (as a character vector or data frame with a `name` column), and index
+#' which students were present using their row numbers. The result is a tibble containing student names,
+#' a logical indicator of presence (`TRUE`/`FALSE`), and a session ID.
+#'
+#' If no session ID is provided, the function automatically uses the current date and time in the format
+#' `"dd-mm-yy_HHMM"`.
+#' Optionally saves or appends the attendance to a CSV file via `file_path`.
+#'
+#' @param full_class A character vector of student names or a data frame with a `name` column.
+#' @param present_students A numeric vector of indices corresponding to students who were present.
+#'                         These indices should match the row numbers of `full_class`.
+#' @param file_path Optional. A file path (e.g., `"attendance.csv"`) where the attendance record will be saved or appended.
+#' @param session_id Optional. A label for the session (e.g., `"session_1"`). If `NULL`, the current date and time is used (in `dd-mm-yy_HHMM` format).
+#'
+#' @returns A tibble with columns: `name` (student name), `present` (logical), and `session` (session ID).
+#' @export
+#'
+#' @examples
+#' # Load USJudgeRatings dataset and use as full class list
+#' full_class <- USJudgeRatings
+#' # Create name column to simulate real class list
+#' full_class$name <- rownames(full_class)
+#' # print full class list to view row indices
+#' print(full_class$name)
+#' # suppose students 1:9, 15, 18, 20:22 are present.
+#' present <- c(1:9, 15, 18, 20:22)
+#' # take attendance
+#' attendance <- take_attendance(full_class = full_class,
+#'                               present_students = present)
+#'
+take_attendance <- function(full_class,
+                            present_students,
+                            file_path = NULL,
+                            session_id = NULL) {
+
+  # If it is a data frame, extract the `name` column: character vector of names
+  if (is.data.frame(full_class)) {
+    full_class <- full_class$name
+  }
+
+  # If no session label, use date and time
+  if (is.null(session_id)) {
+    session_id <- Sys.time()
+  }
+
+  # Create logical vector for attendance
+  present_logical <- seq_along(full_class) %in% present_students
+
+  attendance <- tibble::tibble(
+    name = full_class,
+    present = present_logical,
+    session = session_id
+  )
+
+  # Save - default is to NOT append
+  attendance <- save_output(attendance, file_path)
+
+  return(attendance)
 
 }
