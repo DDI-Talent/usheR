@@ -307,7 +307,9 @@ student_pairs <- function(attendance,
   # convert to data frame
   dataframe <- convert_to_df(new_pairs)
 
-  # Remove NA rows (e.g., groups in susequent weeks that cannot be populated)
+  # In some weeks, there may be fewer students than expected, resulting in underfilled groups.
+  # This creates NA entries in the pairing column for groups that couldn't be formed (e.g., group 5 or 6 in a week with only enough students for 4 groups).
+  # These rows are removed here to ensure only valid pairings are included.
   dataframe <- dataframe[!is.na(dataframe$pairing), ]
 
   # save as csv if needed
