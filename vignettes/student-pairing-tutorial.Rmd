@@ -81,22 +81,51 @@ class_list
 # Option 2: data frame
 class_dataframe <- data.frame(name = class_list)
 class_dataframe
+
+# NOTE: most likely, you will read in the master list csv file given to you from admin, in which you will
+# class_master <- readr::read_csv("YOUR_LIST.csv")
+# This will read in the csv file as a data frame
+# Make sure this csv file has a `name` column, otherwise the functions won't work. 
+# MAKE SURE THIS MASTER LIST CSV FILE IS SAVED INTO THE DIRECTORY YOU ARE USING FOR YOUR R SESSION, AND WHERE YOUR PAIRS GENERATION SCRIPT IS. 
 ```
 
 The functions `take_attendance()` and `student_pairs()`, which will be used later on in this tutorial, are both built to handle either list or data frame format, but the **data frame format is strongly recommended** if you plan to track attendance over time and save it as a .csv.
 
 #### Important notes for class lists
 
-* **Names must be unique**. Duplicate names (e.g., two "Alex") will result in confusing or incorrect pairing history. Consider adding a last initial or student ID to make names distinct.
+* **Names must be unique**. Duplicate names (e.g., two "Alex") will result in confusing (**But not incorrect**) pairing history. Consider adding a last initial or student ID to make names distinct if only first names are given. 
 
-Names are case-sensitive. "John" and "john" will be treated as two different students.
+* Names are case-sensitive. "John" and "john" will be treated as two different students.
 
-If you update your class list mid-semester (e.g., a student joins), add their name to the end of the original list to keep ordering consistent.
+* If you update your class list mid-semester (e.g., a student joins), add their name to the end of the original list to keep ordering (indexing) consistent.
 
 
 # Step 2: Take attendance
 
-Use **`take_attendance()`** to record which students are present.
+Once you have prepared your full class list, the next step is to **record who is present** at a given session using the `take_attendance()` function.
+
+This creates a record of attendance, with each student marked as `"present"` or `"absent"`. You can use this record immediately to generate student pairs, and/or save it to a csv file for use later on.
+
+## What does `take_attendance()` actually do?
+
+It takes in:
+- A full list of enrolled students (your full class list from **Step 1**)
+- A list of which students showed up (present students, indexed by position their on the roster)
+- An optional session label (e.g., `"CourseX_Week1"`), but recommended for recording purposes.
+
+It returns:
+- A **table** showing who was present or absent in that session. 
+
+And optionally:
+- Saves that table to a `.csv` file so you can keep track of attendance over multiple weeks/sessions. 
+
+## Basic usage
+
+You have your master class list from Step 1.
+
+Now suppose four students show up to Week 1: Nicola, John, Beth, and Audrey. These students are in rows 1, 2, 4, and 5 of the data frame.
+
+Here’s how you record that attendance:
 
 ```{r}
 # Load in the usheR package from your library
@@ -104,36 +133,170 @@ Use **`take_attendance()`** to record which students are present.
 
 attendance_week1 <- take_attendance(
   full_class = class_dataframe,
-  present_students = c(1, 2, 4, 5),  # Row indices of each student who is present
-  session_id = "Week_1"
+  present_students = c(1, 2, 4, 5),  # the row numbers of students who are present
+  session_id = "CourseX_Week1" # this label will show up in the attendance table, as well as the saved csv file (if you choose to save - next part)
 )
+```
+
+This gives you a data frame like this:
+
+```{r echo = FALSE}
 attendance_week1
 ```
 
-You can also save it:
+This clearly shows you which students were present and absent in Week 1 of Course X.
+
+### Saving attendance to a file
+
+If you want to save this attendance to a `.csv` file, for example, to build up a full term's worth of attendance records, just add the `file_path` argument to the function:
 
 ```{r}
 take_attendance(
   full_class = class_dataframe,
   present_students = c(1, 2, 4, 5),
-  session_id = "Week_1",
-  file_path = "attendance_log.csv"
+  session_id = "CourseX_Week1",
+  file_path = "CourseX_attendance_log.csv"
 )
 ```
 
-# Step 3: generate students pairs 
+This **creates** a file named `CourseX_attendance_log.csv`, in which the file will be saved in your **working directory**.
 
-Use **`student_pairs()`** to form groups from the present students.
+To check your working directory:
 
 ```{r}
-pairings_week1 <- student_pairs(attendance = attendance_week1)
+getwd()
+```
+
+To change your working directory, use `setwd("your/folder/path")` or set it in RStudio using the Session > Set Working Directory menu.
+
+### Adding more sessions to the same file
+
+If you want to add each week’s attendance to the same file, use the `append = TRUE` option:
+
+```{r}
+attendance_week2 <- take_attendance(
+  full_class = class_dataframe,
+  present_students = c(2, 3, 4, 6),
+  session_id = "CourseX_Week2",
+  file_path = "CourseX_attendance_log.csv",
+  append = TRUE)
+attendance_week2
+```
+
+This will add Week 2’s attendance underneath Week 1’s, keeping everything in one neat file. This is very useful for reporting attendance at the end of the academic year, so it is recommended to append at the end of every session/week (*apart from the first week of course, where there is nothing to append to*). 
+
+### How do I know the row numbers of each student?
+
+Run your master class list name (in this example, run the line below) in the RStudio Console to print the full class list with row numbers:
+
+```{r}
+class_dataframe
+```
+
+The numbers on the left (1, 2, 3, etc.) are the indices you’ll use in `present_students =`.
+
+If you’re working from a printed attendance sheet or Zoom/Teams student list, just match up names to their row number in your data frame.
+
+### Common mistakes to avoid
+
+| Mistake | Explanation | Fix |
+| --------| ----------- | --- |
+| Forgetting the `name` column   | `full_class` must be a **data frame with a `name` column** | Use `data.frame(name = class_list)` |
+| Using names instead of numbers | `present_students` must be row numbers, **not** names | Use the row index (e.g., `1`, `2`) not `"Nicola"` | 
+| Not giving a `session_id`| One will be generated for you (e.g., with date/time), but it’s better to label it | Provide a string like `"CourseX_Week1"` |
+
+
+
+# Step 3: generate students pairs 
+
+Once you have taken attendance for a session (Step 2), the next step is to **form pairs or small groups** of the students who are present. This is done using the **`student_pairs()`** function.
+
+This function uses a smart pairing algorithm that tries to **avoid repeating pairs from previous weeks**, so that students work with someone new each time.
+
+You can use it:
+- For any number of present students
+- With different group sizes (e.g., pairs, trios, groups of 4)
+- With or without pairing history from previous sessions (pairing history is needed for subsequent sessions/weeks so no duplicate pairs/groups are given)
+- With or without saving to file (need to save the pairs history for subsequent sessions/weeks so no duplicate pairs/groups are given)
+
+## What does `student_pairs()` actually do?
+
+It takes in:
+- The attendance data for that session/week (from `take_attendance()` - Step 2)
+
+It optionally takes in:
+- Past pairing history (to avoid repeated pairs)
+- Group size (e.g., 2 for pairs, 3 for trios, and so on)
+- File path (to save the result as a csv file)
+
+It returns:
+- A table showing which students were grouped together for that session/week
+*(along with week/session and group number)*
+
+It also:
+- Tries to minimise repeated groupings
+
+## Basic usage
+
+Taking your attendance output from `take_attendance()` (Step 2), use **`student_pairs()`** to generate groups from the present students.
+
+```{r}
+pairings_week1 <- student_pairs(attendance = attendance_week1,
+                                group_size = 2) # Group size can be changed to any number
+```
+
+This will return a `tibble` (table) with 3 columns:
+
+```{r}
 pairings_week1
 ```
 
-Optionally save:
+Each group is a row. The `~~` in the pairing column separates the student names in each group.
+
+### Saving to a file
+
+If you want to save these pairings to a `.csv` file (strongly recommended), just add a `file_path`: 
+
 ```{r}
-student_pairs(attendance = attendance_week1, file_path = "week1_pairs.csv")
+student_pairs(attendance = attendance_week1, 
+              group_size = 2,
+              file_path = "CourseX_week1_pairs.csv")
 ```
+
+This creates a file in your current working directory called `CourseX_week1_pairs.csv`, with the same columns: `week`, `group`, and `pairing`.
+
+If you do this for each week (e.g., `"CourseX_week2_pairs.csv"`, `"CourseX_week3_pairs.csv"`), you can build a full history of pairings.
+
+### Changing the group size
+By default, `student_pairs()` creates pairs (`group_size = 2`). But you can change this:
+
+```{r}
+student_pairs(attendance = attendance_week1, 
+              group_size = 3)
+```
+
+This will try to group students into groups of 3 instead of pairs.
+
+**Note**: If the number of present students doesn’t divide evenly (e.g., 7 students in groups of 3), the leftover student is always added to the first group, so that no one is missed out. 
+
+### Using pairing history (optional, but powerful - STRONGLY recommended)
+
+The `student_pairs()` function can take into account who has already been grouped together in previous weeks. This avoids repetition and encourages students to meet someone new each session.
+
+To do this, pass in the previous pairings using the `pair_history` argument. Let's say we are on week 2 of the course:
+
+```{r}
+pairings_week2 <- student_pairs(
+  attendance = attendance_week2,
+  pair_history = pairings_week1)
+pairings_week2
+```
+
+Behind the scenes, this uses a "fitness function" that scores each new grouping: the fewer repeats from history, the better.
+
+You can use as much history as you like — one week, several weeks, or a full term’s worth.
+
+You can store and reuse this history as a list (`pairings_week1`, `pairings_week2`, etc.). 
 
 # Step 4: repeat across sessions
 
