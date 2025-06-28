@@ -298,9 +298,39 @@ You can use as much history as you like — one week, several weeks, or a full t
 
 You can store and reuse this history as a list (`pairings_week1`, `pairings_week2`, etc.). 
 
+### Common mistakes to avoid
+
+Forgetting to pass pairing history
+* You may get repeated pairs from week to week. So, add `pair_history = previous_pairs`
+
+Not saving
+* The result is in memory unless you specify file_path. So, use `file_path = "pairs.csv"` to save to use pairs next session/week.
+
 # Step 4: repeat across sessions
 
-Track attendance and avoid repeat pairs by using previous results as history.
+Now that you have generated pairs for the first session/week, you can continue the process week-by-week, or session-by-session.
+
+The key idea is to:
+1. **Take attendance** each session.
+2. **Generate new pairs**, while using **previous pairings** to avoid repeating groupings.
+3. **Save** each week’s attendance and pairs for a full record (optional but recommended).
+
+This helps ensure that, over time, students are paired with as many different classmates as possible — creating a fair and rotating group system.
+
+## Why use `pair_history`?
+
+If you don’t tell the algorithm what happened last time, it might accidentally repeat the same pairs.
+
+Passing in a `pair_history` tells the algorithm:
+> “These students have already been paired — try to avoid doing that again.”
+
+This improves the diversity of groupings across the course.
+
+## Example: Week 2
+
+Let’s say four different students show up in Week 2: John, Keith, Audrey, and Hesham — rows **2, 3, 5, and 6**.
+
+We record their attendance:
 
 ```{r}
 attendance_week2 <- take_attendance(
@@ -309,7 +339,11 @@ attendance_week2 <- take_attendance(
   session_id = "Week_2"
 )
 attendance_week2
+```
 
+Now generate new student pairs, **but tell the algorithm who was paired in Week 1**:
+
+```{r }
 pairings_week2 <- student_pairs(
   attendance = attendance_week2,
   pair_history = pairings_week1
@@ -317,30 +351,59 @@ pairings_week2 <- student_pairs(
 pairings_week2
 ```
 
-## Example: multiple weeks
+This will do its best to create **new pairs**, avoiding combinations seen in Week 1.
 
-For this example, we will use the `USJudgeRatings` dataset, which has real names of Judges from the US Superior Court.
+If you save the output, this also iteratively adds the new groups for each week too, so you only have to pass `student_pairs()` the pairs csv from last week/session, as it will contain all the groups from all previous weeks/sessions. 
 
-*Note this example uses the `file_path` and `append` arguments to simulate real life csv file saving and appending to the same files over weeks. If you don't want to save these csv files onto your own computer, then simply remove the `file_path` and `append` arguments.*
+# Example: multiple weeks (realistic usage)
+
+Let’s walk through a realistic multi-week teaching scenario, using real names from the built-in `USJudgeRatings` dataset in R as our class list, which includes real names of Judges from the US Superior Court. This simulates how you might use the **`usheR`** package throughout a course, including saving files, tracking attendance over time, and avoiding repeat pairings.
+
+This example shows how to:
+- Use `file_path` to save data
+- Use `append = TRUE` to **add new weeks** to the same CSV
+- Rotate group sizes
+- Avoid repeating pairs by using `pair_history`
+
+**Don’t want to save files to your computer?**  
+Just remove the `file_path` and `append` arguments — the functions will still work in-memory.
+
+
+## Scenario
+
+You’re running a **Law course** with 43 students. Each week:
+- You take attendance
+- You form small groups of 2–3 students
+- You want to ensure **students work with someone new** each week
+- You want to **save** everything to CSV so you can review it later
+
 
 ```{r}
 # Full class roster
 class_list <- data.frame(name = rownames(USJudgeRatings))
 class_list
+```
 
-# Week 1
+##### Week 1: pairs
+``` {r }
+# Take attendance for Week 1
 attendance_w1 <- take_attendance(full_class = class_list,
                                  present_students = c(1:6, 7, 9, 13:20), 
                                  session_id = "LawCourse_Week_1",
                                  file_path = "LawCourse_attendance.csv")
 attendance_w1
 
+# Form pairs and save for Week 1
 student_pairs_w1 <- student_pairs(attendance = attendance_w1,
                                   group_size = 2,
                                   file_path = "LawCourse_pairs.csv")
 student_pairs_w1
+```
 
-# Week 2
+#### Week 2: Groups of 3 (with history)
+
+``` {r }
+# Take attendance and APPEND to same file for Week 2
 attendance_w2 <- take_attendance(class_list, 
                                  c(2:7, 8:11, 28),
                                  session_id = "LawCourse_Week_2",
@@ -348,13 +411,17 @@ attendance_w2 <- take_attendance(class_list,
                                  append = TRUE)
 attendance_w2
 
+# Form trios and avoid repeating Week 1 pairs
 student_pairs_w2 <- student_pairs(attendance_w2,
                                   group_size = 3,
                                   pair_history = student_pairs_w1,
                                   file_path = "LawCourse_pairs.csv")
 student_pairs_w2
+```
 
-# Week 3
+##### Week 3: More pairs (keep building history)
+``` {r }
+# Take attendance again for Week 3
 attendance_w3 <- take_attendance(class_list, 
                                  c(1, 4, 5, 8, 10, 15:30), 
                                  session_id = "LawCourse_Week_3",
@@ -362,6 +429,7 @@ attendance_w3 <- take_attendance(class_list,
                                  append = TRUE)
 attendance_w3
 
+# Form new pairs and avoid repeating any past groups
 student_pairs_w3 <- student_pairs(attendance_w3, 
                                   group_size = 2,
                                   pair_history = student_pairs_w2, 
@@ -369,61 +437,28 @@ student_pairs_w3 <- student_pairs(attendance_w3,
 student_pairs_w3
 ```
 
-### Note-wrothy points
+### Key Notes
 
-* Use `file_path` to save attendance and pairings.
-* Pass prior `pairing_history` to avoid group repeats until necessary. 
+**Save as you go**
+Each use of `take_attendance()` and `student_pairs()` saves to the same files — so your full course data is stored in:
+- LawCourse_attendance.csv
+- LawCourse_pairs.csv
 
+**Use `append = TRUE`**
+This ensures new attendance records are added to your file, not overwritten.
 
+**Pass `pair_history`**
+To reduce repeated pairs, always pass the most recent pairings csv file.
 
+**Mix group sizes**
+You can change group_size every week - try it!
 
+# What You’ll Have at the End
 
+* A complete attendance log across weeks
 
+* A record of all pairings, with each session labeled
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+* CSV files you can import later into Excel, R, or a dashboard
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
-
-## Vignette Info
-
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
-```
-
-You can enable figure captions by `fig_caption: yes` in YAML:
-
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
-```
-
-Also a quote using `>`:
-
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+* Fair groupings that rotate automatically
