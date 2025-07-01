@@ -62,8 +62,11 @@ take_attendance <- function(full_class,
                             append = FALSE) {
 
   # If it is a data frame, extract the `name` column: character vector of names
+  # if it is a list, unlist to a character vector of names
   if (is.data.frame(full_class)) {
     full_class <- full_class$name
+  } else if (is.list(full_class)) {
+    full_class <- unlist(full_class)
   }
 
   # If no session label, use date and time
@@ -71,8 +74,12 @@ take_attendance <- function(full_class,
     session_id <- Sys.time()
   }
 
-  # Create logical vector for attendance
-  present_logical <- seq_along(full_class) %in% present_students
+  # Create logical vector for attendance (supports list of names, or indicies)
+  if (is.character(present_students)) {
+    present_logical <- full_class %in% present_students
+  } else {
+    present_logical <- seq_along(full_class) %in% present_students
+  }
 
   attendance <- tibble::tibble(
     name = full_class,
@@ -134,7 +141,7 @@ save_output <- function(dataframe,
   if (!is.null(file_path)) {
     if (append && file.exists(file_path)) {
       existing <- readr::read_csv(file_path, show_col_types = FALSE)
-      dataframe <- dplyr::bind_rows(existing, dataframe)
+      dataframe <- dplyr::bind_rows(dataframe, existing)
     }
 
     write.csv(dataframe, file_path, row.names = FALSE)
