@@ -305,7 +305,12 @@ student_pairs <- function(attendance,
                           group_size = 2,
                           population = 1000,
                           pair_history = NULL,
-                          file_path = NULL){
+                          file_path = NULL,
+                          seed = NULL){
+
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
 
   # Handle pairing history if supplied as data frame - re-convert to list
   if(!is.null(pair_history)) {
@@ -314,8 +319,11 @@ student_pairs <- function(attendance,
       }
   }
 
+  # Identify most recent session/week
+  latest_session <- attendance$session[1]  # assumes latest session is in the first row
+  latest_attendance <- attendance[attendance$session == latest_session, ]
   # Extract present students from attendance data
-  class_list <- attendance$name[attendance$present]
+  class_list <- latest_attendance$name[latest_attendance$present]
 
   new_pairs <- create_pairs(pool = class_list,
                             group_size = group_size,
@@ -401,8 +409,11 @@ take_attendance <- function(full_class,
                             append = FALSE) {
 
   # If it is a data frame, extract the `name` column: character vector of names
+  # if it is a list, unlist to a character vector of names
   if (is.data.frame(full_class)) {
     full_class <- full_class$name
+  } else if (is.list(full_class)) {
+    full_class <- unlist(full_class)
   }
 
   # If no session label, use date and time
@@ -410,8 +421,12 @@ take_attendance <- function(full_class,
     session_id <- Sys.time()
   }
 
-  # Create logical vector for attendance
-  present_logical <- seq_along(full_class) %in% present_students
+  # Create logical vector for attendance (supports list of names, or indicies)
+  if (is.character(present_students)) {
+    present_logical <- full_class %in% present_students
+  } else {
+    present_logical <- seq_along(full_class) %in% present_students
+  }
 
   attendance <- tibble::tibble(
     name = full_class,
@@ -469,7 +484,7 @@ save_output <- function(dataframe,
   if (!is.null(file_path)) {
     if (append && file.exists(file_path)) {
       existing <- readr::read_csv(file_path, show_col_types = FALSE)
-      dataframe <- dplyr::bind_rows(existing, dataframe)
+      dataframe <- dplyr::bind_rows(dataframe, existing)
     }
 
     write.csv(dataframe, file_path, row.names = FALSE)
