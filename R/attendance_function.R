@@ -1,29 +1,38 @@
 #' Taking student attendance
 #'
-#' This function creates and optionally saves a record of student attendance for a given session.
-#' You provide a class list (as a character vector or data frame with a `name` column), and index
-#' which students were present using their row numbers. The result is a tibble containing student names,
-#' a logical indicator of presence (`TRUE`/`FALSE`), and a session ID.
+#' This function creates and optionally saves a record of student attendance for
+#' a given session. You provide a class list (as a character vector or data
+#' frame with a `name` column), and index which students were present using
+#' their row numbers. The result is a tibble containing student names, a logical
+#' indicator of presence (`TRUE`/`FALSE`), and a session ID.
 #'
-#' If no session ID is provided, the function automatically uses the current date and time in the format
-#' `"dd-mm-yy_HHMM"`. You can optionally write the output to a CSV file using the file_path argument.
-#' If append = FALSE (default), the file will be created or overwritten.
-#' If append = TRUE, the new attendance will be added to the bottom of an existing attendance log.
-#' This allows you to accumulate attendance across sessions in a single file.
+#' If no session ID is provided, the function automatically uses the current
+#' date and time in the format `"dd-mm-yy_HHMM"`. You can optionally write the
+#' output to a CSV file using the file_path argument. If append = FALSE
+#' (default), the file will be created or overwritten. If append = TRUE, the new
+#' attendance will be added to the bottom of an existing attendance log. This
+#' allows you to accumulate attendance across sessions in a single file.
 #'
-#' @param full_class A character vector of student names or a data frame with a `name` column.
-#' @param present_students A numeric vector of indices corresponding to students who were present.
-#'                         These indices should match the row numbers of `full_class`.
-#' @param file_path Optional. A file path (e.g., `"attendance.csv"`) where the attendance record will be saved or appended.
-#' @param session_id Optional. A label for the session (e.g., `"week1"`). If `NULL`, the current date and time is used.
-#' @param append Logical. If TRUE, appends to an existing file specified in `file_path`. If FALSE, overwrites the file. Default is `FALSE`.
+#' @param full_class A character vector of student names or a data frame with a
+#'   `name` column.
+#' @param present_students A numeric vector of indices corresponding to students
+#'   who were present. These indices should match the row numbers of
+#'   `full_class`.
+#' @param file_path Optional. A file path (e.g., `"attendance.csv"`) where the
+#'   attendance record will be saved or appended.
+#' @param session_id Optional. A label for the session (e.g., `"week1"`). If
+#'   `NULL`, the current date and time is used.
+#' @param append Logical. If TRUE, appends to an existing file specified in
+#'   `file_path`. If FALSE, overwrites the file. Default is `FALSE`.
 #'
-#' @returns A tibble with columns: `name` (student name), `present` (logical), and `session` (session ID).
+#' @returns A tibble with columns: `name` (student name), `present` (logical),
+#'   and `session` (session ID).
 #' @export
 #'
 #' @examples
 #' # Load USJudgeRatings dataset and use as full class list
-#' class_list <- data.frame(name = rownames(USJudgeRatings))
+#' class_list <- data.frame(id = 1:nrow(USJudgeRatings),
+#'                          name = rownames(USJudgeRatings))
 #'
 #' # print full class list to view row indices
 #' print(class_list$name)
@@ -83,12 +92,19 @@ take_attendance <- function(full_class,
 
   attendance <- tibble::tibble(
     name = full_class,
-    present = present_logical,
-    session = session_id
+    session = session_id,
+    present = present_logical
+  )
+
+  # Pivot to wide: one column per session
+  attendance_wide <- tidyr::pivot_wider(
+    attendance,
+    names_from = session,
+    values_from = present
   )
 
   # Save output - default is to NOT append
-  attendance <- save_output(attendance, file_path, append = append)
+  attendance <- save_output(attendance_wide, file_path, append = append)
 
   return(attendance)
 
@@ -100,18 +116,20 @@ take_attendance <- function(full_class,
 
 
 
-#' Save or append a data frame to CSV
+#'Save or append a data frame to CSV
 #'
-#' This helper function saves a data frame to a specified `.csv` file path, either by overwriting the file
-#' or appending to it. If `append = TRUE` and the file already exists, the existing contents
-#' are read and combined with the new data before being written back to the file.
-#' If `file_path` is `NULL`, the data frame is returned without saving.
+#'This helper function saves a data frame to a specified `.csv` file path,
+#'either by overwriting the file or appending to it. If `append = TRUE` and the
+#'file already exists, the existing contents are read and combined with the new
+#'data before being written back to the file. If `file_path` is `NULL`, the data
+#'frame is returned without saving.
 #'
-#' @param dataframe A data frame to be saved.
-#' @param file_path A character string specifying the CSV file path.
-#' @param append Logical. If `TRUE`, appends to an existing file if it exists. If `FALSE`, the file is overwritten. Default is `FALSE`.
+#'@param dataframe A data frame to be saved.
+#'@param file_path A character string specifying the CSV file path.
+#'@param append Logical. If `TRUE`, appends to an existing file if it exists. If
+#'  `FALSE`, the file is overwritten. Default is `FALSE`.
 #'
-#' @returns Returns the (optionally saved) data frame.
+#'@returns Returns the (optionally saved) data frame.
 #'
 #' @examples
 #' # Load USJudgeRatings dataset and use as full class list
@@ -141,7 +159,7 @@ save_output <- function(dataframe,
   if (!is.null(file_path)) {
     if (append && file.exists(file_path)) {
       existing <- readr::read_csv(file_path, show_col_types = FALSE)
-      dataframe <- dplyr::bind_rows(dataframe, existing)
+      dataframe <- dplyr::full_join(dataframe, existing, by = "name")
     }
 
     write.csv(dataframe, file_path, row.names = FALSE)
