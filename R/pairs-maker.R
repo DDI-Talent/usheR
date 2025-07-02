@@ -434,8 +434,15 @@ take_attendance <- function(full_class,
     session = session_id
   )
 
+  # Pivot to wide: one column per session
+  attendance_wide <- tidyr::pivot_wider(
+    attendance,
+    names_from = session,
+    values_from = present
+  )
+
   # Save output - default is to NOT append
-  attendance <- save_output(attendance, file_path, append = append)
+  attendance <- save_output(attendance_wide, file_path, append = append)
 
   return(attendance)
 
@@ -484,7 +491,7 @@ save_output <- function(dataframe,
   if (!is.null(file_path)) {
     if (append && file.exists(file_path)) {
       existing <- readr::read_csv(file_path, show_col_types = FALSE)
-      dataframe <- dplyr::bind_rows(dataframe, existing)
+      dataframe <- dplyr::full_join(dataframe, existing, by = "name")
     }
 
     write.csv(dataframe, file_path, row.names = FALSE)
