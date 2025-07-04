@@ -319,11 +319,11 @@ student_pairs <- function(attendance,
       }
   }
 
-  # Identify most recent session/week
-  latest_session <- attendance$session[1]  # assumes latest session is in the first row
-  latest_attendance <- attendance[attendance$session == latest_session, ]
+  # Identify the latest session column (2nd column always)
+  latest_col <- names(attendance)[2]
+  present_logical <- attendance[[latest_col]]
   # Extract present students from attendance data
-  class_list <- latest_attendance$name[latest_attendance$present]
+  class_list <- attendance$name[present_logical]
 
   new_pairs <- create_pairs(pool = class_list,
                             group_size = group_size,
