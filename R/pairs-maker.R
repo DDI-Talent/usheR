@@ -45,8 +45,11 @@ sort_and_combine <- function(pair) {
 #' }
 #'
 fitness_function <- function(pairs, record) {
-  pairs_strings <- sapply(pairs, sort_and_combine)
-  sum(pairs_strings %in% unlist(record))
+    pairs_strings = sapply(pairs, sort_and_combine)
+  list(
+    pairs = pairs_strings,
+    dup_count = sum(pairs_strings %in% unlist(record))
+  )
 }
 
 
@@ -108,11 +111,11 @@ create_pairs <- function(pool, group_size = 2,
     i <- i + 1
     pairs <- split(sample(pool), group_names)
 
-    how_many_dups <- fitness_function(pairs, record)
+    this_gen <- fitness_function(pairs, record)
 
     if (how_many_dups <= winning_dups) {
-      winning_dups  <- how_many_dups
-      winning_pairs <- sapply(pairs, sort_and_combine)
+      winning_dups  <- this_gen$dup_count
+      winning_pairs <- this_gen$pairs
     }
   }
 
