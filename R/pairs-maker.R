@@ -307,7 +307,6 @@ convert_to_list <- function(data_frame) {
 student_pairs <- function(attendance,
                           group_size = 2,
                           population = 1000,
-                          pair_history = NULL,
                           file_path = NULL,
                           seed = NULL){
 
@@ -315,14 +314,14 @@ student_pairs <- function(attendance,
     set.seed(seed)
   }
 
-  # Handle pairing history if supplied as data frame - re-convert to list
-  if(!is.null(pair_history)) {
-    if(is.data.frame(pair_history)) {
-      pair_history <- convert_to_list(pair_history)
-      }
+  # Load pair history automatically from file_path (if exists)
+  pair_history <- NULL
+  if (!is.null(file_path) && file.exists(file_path)) {
+    pair_history_df <- readr::read_csv(file_path, show_col_types = FALSE)
+    pair_history <- convert_to_list(pair_history_df)
   }
 
-  # Identify the latest session column (2nd column always)
+  # Identify the latest session column
   latest_col <- names(attendance)[2]
   present_logical <- attendance[[latest_col]]
   # Extract present students from attendance data
