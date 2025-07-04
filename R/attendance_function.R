@@ -92,8 +92,8 @@ take_attendance <- function(full_class,
 
   attendance <- tibble::tibble(
     name = full_class,
-    session = session_id,
-    present = present_logical
+    present = present_logical,
+    session = session_id
   )
 
   # Pivot to wide: one column per session
@@ -109,7 +109,6 @@ take_attendance <- function(full_class,
   return(attendance)
 
 }
-
 
 
 
@@ -169,3 +168,4 @@ save_output <- function(dataframe,
   return(dataframe)
 
 }
+
