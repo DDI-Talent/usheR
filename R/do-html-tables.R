@@ -48,10 +48,11 @@
 #'
 #' # Create a blank HTML table skeleton
 #' # with column names and specicified number of rows
+#' html_table_file <- tempfile('html-table_', fileext = '.html')
 #' do_html_table(c('col_1', 'col_2', 'col_3'), n_rows = 2)
 #'
 #' # Create HTML table filled with values from a data frame
-#' do_html_table(BOD)
+#' do_html_table(BOD, file = html_table_file)
 #'
 #' do_html_table(c('Criteria', 'Description', 'Weight'),
 #'               n_rows = 2)
@@ -73,7 +74,7 @@
 do_html_table <- function(d = '', n_rows = 1, widths = NULL,
                           table_caption = NULL, style = NULL,
                           file = 'temp_learn-table.html',
-                          interactive = interactive()) {
+                          is_interactive = interactive()) {
   n_cols <- length(d)
   table <- paste(
     update_table_style(style),
@@ -84,12 +85,12 @@ do_html_table <- function(d = '', n_rows = 1, widths = NULL,
     table_header(d),
     table_body(d, ncl = n_cols, nrw = n_rows),
     '</table>',
-    '</div>',
+    '</div>\n\n',
     sep = '\n'
   )
   if (!is.null(file)) cat(table, file= file)
 
-  if (interactive) file.edit(file)
+  if (is_interactive) file.edit(file)
   else table
 }
 
@@ -156,12 +157,10 @@ table_body <- function(d, nrw, ncl) {
 #' Create HTML table column group
 #'
 #' Creates `<colgroup>` tag and child `<col>` tags, for the purpose of setting
-#' column widths. If `widths` is `NULL`, the widths are set equally to `96% /
-#' ncol`. If too few widths are provided, the table expands to fill the HTML
-#' page.
+#' column widths. If `widths` is `NULL`, the widths are set equally to `96% / ncol`. If too few widths are provided, the table expands to fill the
+#' HTML page.
 #'
-#' @param ncl Integer; Number of columns; derived from the length of the header
-#'   row.
+#' @param ncl Integer; Number of columns; derived from the length of the header row.
 #' @param widths Numeric; Vector of column widths.
 #'
 #' @return Character; HTML `col_group` element
@@ -202,8 +201,7 @@ col_group <- function(ncl = NULL, widths = NULL) {
 #'
 #' # `.row_highlight` already exists in the default stylesheet.
 #' # The new declaration is simply appended next to the old.
-#' # Selector that do not exist in the default stylesheet are added
-#' # to the end of the stylesheet.
+#' # Selector that do not exist in the default stylesheet are added to the end of the stylesheet.
 #' update_table_style(element = 'property: value;',
 #'               .row_highlight = 'background-color: #000000;',
 #'               `selector with spaces` = 'property: value;')
@@ -212,15 +210,14 @@ update_table_style <- function(...) {
   # cat(table_css)
 
   default_rules <- c(
-    `table` = 'font-size: 1.6rem; font-family: Arial; border-collapse: collapse; border-bottom: 3px solid #6a0051;',
-    `caption` = 'text-align: left;',
+    `.jwTab table` = 'font-size: 1.6rem; font-family: Arial; border-collapse: collapse; border-bottom: 3px solid #6a0051;',
+    `.jwTab caption` = 'text-align: left;',
     `.jwTab th` = 'color: white; background-color: #6a0051; height: 60px; text-align: left; padding-left: 8px;',
-    `td` = 'padding: 8px 8px; vertical-align: top;',
-    `.row_outer` = 'border-top: 3px solid #6a0051;',
-    `.row_inner` = 'border-top: 1px solid #e7d6e3; border-bottom: 1px solid #e7d6e3;',
-    `.row_highlight` = 'background-color: #e7d6e3;'
+    `.jwTab td` = 'padding: 8px 8px; vertical-align: top;',
+    `.jwTab .row_outer` = 'border-top: 3px solid #6a0051;',
+    `.jwTab .row_inner` = 'border-top: 1px solid #e7d6e3; border-bottom: 1px solid #e7d6e3;',
+    `.jwTab .row_highlight` = 'background-color: #e7d6e3;'
   )
-  defalt_rules <- paste('jwTab', default_rules)
 
   new_rules <- c(...)
   old_names <- names(default_rules)
