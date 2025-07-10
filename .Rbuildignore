@@ -3,3 +3,5 @@
 ^_misc$
 ^LICENSE\.md$
 ^README\.qmd$
+^doc$
+^Meta$

@@ -6,3 +6,6 @@
 .Ruserdata
 .DS_Store
 *_files/
+inst/doc
+/doc/
+/Meta/

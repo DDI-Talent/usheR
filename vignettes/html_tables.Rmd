@@ -1,0 +1,119 @@
+---
+title: "Create minimal custom HTML tables for Learn Ultra"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Create minimal custom HTML tables for Learn Ultra}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  eval = FALSE,
+  comment = "#>"
+)
+```
+
+
+## Introduction
+
+```{r setup}
+library(usheR)
+```
+
+The `usheR` package provides tools to create and style minimal HTML tables, intended especially for easy copy-and-paste into Learning Management Systems (like Learn).
+The tables generated are simple, easy to customize, and designed for manual value substitution and fine-tuning.
+
+## Why Use These Functions?
+
+Many R packages generate complex HTML tables that can be hard to tweak for simple display scenarios or manual editing.
+The `usheR` pack a lightweight solution for creating basic HTML tables with minimal styling, making it easy to copy and paste into your workflow.
+
+- Quickly generate minimal, valid HTML table templates.
+- Easily customize styles using simple R syntax and a named vector for CSS.
+- Copy and paste the generated HTML directly into your workflow (e.g., a Learn page).
+
+__Note:__ Running any code chunk below will write the generated HTML to a file which will be automatically opened for inspection or editing.
+The same file will be overwritten each time, unless you specify a different file using the `file` parameter.
+
+## Basic HTML Table Creation
+
+To create a skeleton table, use `do_html_table()`.
+At a minimum, specify column names.
+
+```{r}
+# Create a 2-row table with column names
+do_html_table(
+  c('col_1', 'col_2', 'col_3'),
+  n_rows = 2
+)
+```
+
+This prints a valid HTML table with a header and two data rows, all cells initially populated with `__PLACEHOLDER__`.
+The generated HTML is written to `temp-table.html`.
+You can edit the HTML file directly, and when happy, copy the HTML from the file and paste into your Learn document.
+You can also preview the table by clicking the "preview" button at the top of the file editor.
+
+## Using a Data Frame as Input
+
+Rather than specifying column names and rows, you can directly use a data frame.
+
+```{r}
+do_html_table(BOD)
+```
+
+This creates a table whose rows and columns are populated with the values in the supplied data frame.
+
+## Adding Captions and Setting Column Widths
+
+By default there is no caption and all columns are all of an equal width, such that the full width of the table is the full width of the page (or containing div).
+To add a caption, or set column widths as percentages:
+
+```{r}
+do_html_table(
+  c('Criteria', 'Description', 'Weight'),
+  n_rows = 1,
+  table_caption = "This is my caption",
+  widths = c(20, 70, 10)
+)
+```
+
+
+## Customizing Table Style
+
+By default, your table comes with built-in minimal CSS.
+You can add or append new CSS rules using the style parameter.
+
+```{r}
+# Add or extend existing CSS rules
+custom_css <- c(
+  # element = 'property: value;',
+  .row_highlight = 'background-color: #000000;',
+  `.a-class tr > td` = 'border: 1px solid #ccccc;'
+)
+
+do_html_table(
+  c('Criteria', 'Description', 'Weight'),
+  n_rows = 1,
+  style = custom_css
+)
+```
+
+### How Styles Are Applied
+
+If you specify a selector that already exists (e.g., `.row_highlight`), your rules are appended to the default rules for that selector.
+This means you you can override the default rules, or add to them.
+New selectors are simply added to the end of the stylesheet.
+You can use non-syntactic selector names by enclosing them in back ticks (e.g., `.a-class tr > td`).
+
+
+## Next Steps
+
+- Generate your table skeleton with `do_html_table()` and desired options.
+- Edit the HTML, replacing `__PLACEHOLDER__` with your actual cell contents.
+- Optionally, tweak the CSS with the `style` parameter.
+- Paste the final HTML into your desired environment.
+
+__Note:__ The output HTML is intentionally minimal for ease of editing and copying.
+For full-featured table generation, consider packages like `knitr` or `gt`.
