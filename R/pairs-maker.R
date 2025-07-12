@@ -164,8 +164,7 @@ print.pairings <- function(x, n = 1, ...) {
 #' @returns A tibble with the columns : `week` (Integer), `group` (Character), and `pairing` (Character).
 #'
 #' @examples
-#' # Create a static roster
-#' ## Note this input needs to be a list for `create_pairs()`
+#' # Create a class list
 #' roster <- LETTERS[1:10]
 #'
 #' # Generate pairs
@@ -208,13 +207,12 @@ convert_to_df <- function(pairings,
 #' A helper function to convert a pairings tibble (created by `convert_to_df()`) back into a list format compatible with `create_pairs()`.
 #' The tibble must contain the columns `week`, `group`, and `pairing`, as produced by `convert_to_df()`.
 #'
-#' @param df A tibble with columns `week`, `group`, and `pairing`: the output of `convert_to_df()`.
+#' @param data_frame A tibble with columns `week`, `group`, and `pairing`: the output of `convert_to_df()`.
 #'
 #' @returns A list of named character vectors with class `pairings`, matching the structure expected by `create_pairs()`.
 #'
 #' @examples
-#' # Create a static roster
-#' ## Note this input needs to be a list for `create_pairs()`
+#' # Create a class list
 #' roster <- LETTERS[1:10]
 #'
 #' # Generate pairs
@@ -255,26 +253,28 @@ convert_to_list <- function(data_frame) {
 
 
 
-#' User generation of student pairs based on attendance
+#' Generate optimised student pairs based on latest attendance
 #'
-#' A wrapper function that generates optimised student pairs from the list of present students
-#' using the `create_pairs()` algorithm. This function minimises repeated pairings by incorporating
-#' previous pairing history (if provided) and outputs results in tidy data frame format.
+#' This wrapper function uses `create_pairs()` to generate optimised student pairs or groups,
+#' based on the latest attendance. It automatically attempts to minimise repeat pairings
+#' by reading pairing history from `file_path` if the file exists.
 #'
-#' The pairing history can be supplied as either:
-#' - A list with class `pairings` (output of `create_pairs()` or `convert_to_list()`), or
-#' - A data frame with columns `week`, `group`, and `pairing` (output of `convert_to_df()`).
+#' The function expects a wide-format attendance tibble, as produced by `take_attendance()`,
+#' where column 1 is `name`, and column 2 is the most recent session (with logical TRUE/FALSE values for attendance).
 #'
-#' Optionally, the resulting pairings can be saved to a CSV file via `file_path`.
+#' If a file path is provided and the file exists, it is read and used as pairing history
+#' to guide group allocation (via `convert_to_list()`).
+#' The resulting pairs are returned as a tidy tibble and can also be saved to the same file path.
 #'
+#' @param attendance A wide-format tibble returned by `take_attendance()`, with columns `name`, `WeekX`, etc.
+#' @param group_size Integer. Number of students per group. Default is 2.
+#' @param population Integer. Number of pairing attempts (used to minimise repeats). Default is 1000.
+#' @param file_path Optional. Path to a CSV file to load past pairings *and* save new ones.
+#' @param seed Optional. Random seed for reproducibility.
 #'
-#' @param attendance A tibble with columns `name` and `present`, as returned by `take_attendance()`.
-#' @param group_size Integer; Number of students per group. Default number is 2.
-#' @param population Integer; Number of simulated "organisms" to sample. I.e. how long to spend searching for a better solution. Default is 1000.
-#' @param pair_history Optional. Pairing history to minimise repeated pairings. Can be a `pairings` list or a data frame.
-#' @param file_path Optional. A character string to save the result as a CSV file. If `NULL`, no file is saved.
+#' @return A tibble with columns: `week` (Integer), `group` (Character), and `pairing` (Character).
+#' Each row represents one group.
 #'
-#' @returns A tibble with columns: `week`, `group`, and `pairing`.
 #' @export
 #'
 #' @examples
