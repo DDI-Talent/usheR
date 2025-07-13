@@ -2,4 +2,6 @@
 
 S3method(print,pairings)
 export(create_pairs)
+export(student_pairs)
+export(take_attendance)
 export(update_from_github)
