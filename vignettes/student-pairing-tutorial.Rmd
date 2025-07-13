@@ -228,9 +228,8 @@ It takes in:
 - The attendance data for that session/week (from `take_attendance()` - Step 2)
 
 It optionally takes in:
-- Past pairing history (to avoid repeated pairs)
+- A file path (to save pairings and load past history)
 - Group size (e.g., 2 for pairs, 3 for trios, and so on)
-- File path (to save the result as a csv file)
 
 It returns:
 - A table showing which students were grouped together for that session/week
@@ -269,15 +268,9 @@ student_pairs(attendance = attendance_week1,
 ```
 
 This creates a file in your current working directory called `CourseX_week1_pairs.csv`, with the same columns: `week`, `group`, and `pairing`.
-This includes:
 
-- The new pairings from the current week
-
-- All previous weeks’ pairings (if you provided `pair_history`)
-
-There is no need to create a new file for each week, because the function automatically builds a full history and saves that complete dataset each time.
-
-If you call the function weekly, just keep using the same file name and let it overwrite. That way you’ll always have the most up-to-date list of all pairings.
+If this file already exists, the pairing history will be loaded from it and used to minimise repeated pairs.
+The new pairs will append to the file, including all pairings so far from each week. 
 
 ### Changing the group size
 By default, `student_pairs()` creates pairs (`group_size = 2`). But you can change this:
@@ -292,30 +285,16 @@ This will try to group students into groups of 3 instead of pairs.
 
 __Note__: If the number of present students doesn’t divide evenly (e.g., 7 students in groups of 3), the leftover student is always added to the first group, so that no one is missed out. 
 
-### Using pairing history (optional, but powerful - STRONGLY recommended)
+### Avoiding repeat pairings automatically
 
-The `student_pairs()` function can take into account who has already been grouped together in previous weeks. This avoids repetition and encourages students to meet someone new each session.
+If you pass a `file_path` to `student_pairs()`, the function will automatically read in previous pairings from that file and try to avoid repeating any past groups.
 
-To do this, pass in the previous pairings using the `pair_history` argument. Let's say we are on week 2 of the course:
-
-```{r}
-pairings_week2 <- student_pairs(
-  attendance = attendance_week2,
-  pair_history = pairings_week1,
-  seed = 100) # Ensures same output every time
-pairings_week2
-```
-
-Behind the scenes, this uses a "fitness function" that scores each new grouping: the fewer repeats from history, the better.
-
-You can use as much history as you like — one week, several weeks, or a full term’s worth.
-
-You can store and reuse this history as a list (`pairings_week1`, `pairings_week2`, etc.). 
+You don’t need to manually pass in history - just keep saving to the same file each week!
 
 ### Common mistakes to avoid
 
 Forgetting to pass pairing history
-* You may get repeated pairs from week to week. So, add `pair_history = previous_pairs`
+* You may get repeated pairs from week to week. So, remember to add the file_path from the first week to ensure the previous weeks pairs can be taken into account.
 
 Not saving
 * The result is in memory unless you specify file_path. So, use `file_path = "pairs.csv"` to save to use pairs next session/week.
@@ -330,15 +309,6 @@ The key idea is to:
 3. __Save__ each week’s attendance and pairs for a full record (optional but recommended).
 
 This helps ensure that, over time, students are paired with as many different classmates as possible — creating a fair and rotating group system.
-
-## Why use `pair_history`?
-
-If you don’t tell the algorithm what happened last time, it might accidentally repeat the same pairs.
-
-Passing in a `pair_history` tells the algorithm:
-> “These students have already been paired — try to avoid doing that again.”
-
-This improves the diversity of groupings across the course.
 
 ## Example: Week 2
 
@@ -359,7 +329,7 @@ Now generate new student pairs, __but tell the algorithm who was paired in Week 
 ```{r }
 pairings_week2 <- student_pairs(
   attendance = attendance_week2,
-  pair_history = pairings_week1,
+  #file_path = "pairings_week1.csv", # THIS IS COMMENTED OUT AS WE HAVENT SAVED THE PAIRINGS_WEEK1, BUT THIS IS REQUIRED FOR SUBSEQUENT WEEKS PAIRINGS
   seed = 100) # Ensures same output every time
 pairings_week2
 ```
@@ -376,7 +346,6 @@ This example shows how to:
 - Use `file_path` to save data
 - Use `append = TRUE` to __add new weeks__ to the same CSV
 - Rotate group sizes
-- Avoid repeating pairs by using `pair_history`
 
 __Don’t want to save files to your computer?__  
 Just remove the `file_path` and `append` arguments — the functions will still work in-memory.
@@ -425,10 +394,9 @@ attendance_w2 <- take_attendance(class_list,
                                  append = TRUE)
 attendance_w2
 
-# Form trios and avoid repeating Week 1 pairs
+# Form trios and avoid repeating Week 1 pairs by loading past pairs from file
 student_pairs_w2 <- student_pairs(attendance_w2,
                                   group_size = 3,
-                                  pair_history = student_pairs_w1,
                                   file_path = "LawCourse_pairs.csv",
                                   seed = 100) # Ensures same output every time
 student_pairs_w2
@@ -444,10 +412,9 @@ attendance_w3 <- take_attendance(class_list,
                                  append = TRUE)
 attendance_w3
 
-# Form new pairs and avoid repeating any past groups
+# Form new pairs and avoid repeating any past groups automatically from file
 student_pairs_w3 <- student_pairs(attendance_w3, 
                                   group_size = 2,
-                                  pair_history = student_pairs_w2, 
                                   file_path = "LawCourse_pairs.csv",
                                   seed = 100) # Ensures same output every time
 student_pairs_w3
@@ -462,9 +429,6 @@ Each use of `take_attendance()` and `student_pairs()` saves to the same files �
 
 __Use `append = TRUE`__
 This ensures new attendance records are added to your file, not overwritten.
-
-__Pass `pair_history`__
-To reduce repeated pairs, always pass the most recent pairings csv file.
 
 __Mix group sizes__
 You can change group_size every week - try it!
