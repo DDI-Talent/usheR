@@ -1,4 +1,4 @@
-#' Flter admissions xlsx spreadsheat
+#' Filter admissions xlsx spreadsheat
 #'
 #' Reads the spreadsheet at the provided path. The spreadsheet should be stored
 #' in your personal OneDrive space. The column names are changed to be
@@ -8,10 +8,12 @@
 #' Decision` equal to "`(SB) Ready for Decision`".
 #'
 #' No columns are removed, so the function should always work as intended, as
-#' long as the `Programme Code` column is correct, and always called `Programme
+#' long as the `Programme Code` column is correct, and is always called `Programme
 #' Code`.
 #'
-#' @param spreadsheet_path Character; Path to admissions spreadsheet
+#' @param new_admissions_spreadsheet Character; Path to admissions spreadsheet. Assumed to be the most recent spreadsheet
+#' @param reviewed_spreadsheet Character; Path to previous will filter any that have had a note added already.
+#' @param decision_col Character; Name of column used for recording decisions. Can be a vector of length two if each spreadsheet has decision col with a different name. Current default is `team_action`
 #'
 #' @returns Data frame filtered for DSHSC applications. programme applications.
 #' @export
@@ -21,22 +23,26 @@
 #' filter_admissions('~/../OneDrive - University of Edinburgh/.../PG00x PG applicant communications report-online 01-Jan-00.xlsx')
 #'
 filter_admissions <- function(new_admissions_spreadsheet,
-                              reviewed_spreadsheet = NULL) {
+                              reviewed_spreadsheet = NULL,
+                              decision_col = 'team_action') {
+
+  decision_col <- tolower(decision_col)
 
   if (!is.null(reviewed_spreadsheet)) {
     already_reviewed <-  read_admissions_spreadsheet(reviewed_spreadsheet)
-    already_actioned <- filter_actioned(already_reviewed)
+    # already_actioned <- filter_actioned(already_reviewed)
+    already_actioned <- filter_actioned(already_reviewed, decision_col = decision_col[length(decision_col)])
 
     ready_for_decision <- dplyr::anti_join(already_reviewed, already_actioned, by = dplyr::join_by(application_id))
   }
 
   admissions_data <- read_admissions_spreadsheet(new_admissions_spreadsheet)
   ready_for_decision <- filter_new(admissions_data)
-  if (!hasName(ready_for_decision, 'team_action')) {
-    ready_for_decision$team_action <- NA_character_
+  if (!hasName(ready_for_decision, decision_col[[1]])) {
+    ready_for_decision[[decision_col[[1]]]] <- NA_character_
   }
 
-  ready_for_decision
+  print(ready_for_decision, decision_col = decision_col[[1]])
 }
 
 
@@ -66,8 +72,8 @@ filter_new <- function(d) {
 }
 
 
-filter_actioned <- function(d) {
-  dplyr::filter(d, !is.na(team_action))
+filter_actioned <- function(d, decision_col = 'programme_decision') {
+  d[!is.na(d[[decision_col]]), ]
 }
 
 
@@ -78,12 +84,12 @@ filter_actioned <- function(d) {
 #' @export
 #' @keywords internal
 #'
-summary.admissions <- function(object, ...) {
+summary.admissions <- function(object, decision_col = notes, ...) {
   object |>
     dplyr::mutate(status = sub('.+? ', '', qualification_status_description),
                   qualification = sub(' .+', '', programme_description)) |>
-    dplyr::summarise(done  = sum(!is.na(team_action)),
-                     to_do = sum(is.na(team_action)),
+    dplyr::summarise(done  = sum(!is.na({{decision_col}})),
+                     to_do = sum(is.na({{decision_col}})),
                      .by = c(qualification, status)) |>
     print(all_cols = TRUE)
 }
@@ -91,7 +97,7 @@ summary.admissions <- function(object, ...) {
 #' Print method for admissions object
 #'
 #' By default shows only a selected minimum of columns. To see all columns use
-#' `all_cols = TRUE`. Column `team_action` is placed at the front of hte data frame for easy inspection, but is actually the final column of the admissions data set.
+#' `all_cols = TRUE`. Column `decision_col` is placed at the front of the data frame for easy inspection, but is actually the final column of the admissions data set.
 #'
 #' @param x Data frame of class `admissions`
 #' @param all_cols Logical
@@ -100,10 +106,10 @@ summary.admissions <- function(object, ...) {
 #' @export
 #' @keywords internal
 #'
-print.admissions <- function(x, all_cols = FALSE, ...) {
+print.admissions <- function(x, decision_col = team_action, all_cols = FALSE, ...) {
   if (!all_cols) {
     x <- x |>
-      dplyr::select(team_action, programme_code, uun, application_id, forename, surname, qualification, status) |>
+      dplyr::select({{decision_col}}, programme_code, uun, application_id, forename, surname, qualification, status) |>
       dplyr::arrange(desc(programme_code))
   }
   NextMethod(x)
@@ -135,7 +141,7 @@ print.admissions <- function(x, all_cols = FALSE, ...) {
 #' @examples
 #'   step_through_admissions(admissions_data, 'jw')
 #'
-step_through_admissions <- function(admissions_data, reviewer) {
+step_through_admissions <- function(admissions_data, reviewer, decision_col = 'team_action') {
   if (!nrow(admissions_data)) {
     cat('None left 🥳')
     return(invisible())
@@ -143,27 +149,34 @@ step_through_admissions <- function(admissions_data, reviewer) {
 
   stopifnot('Argument `reviewer` missing\nUse `step_through_admissions(admissions, "Your initials")`' = !missing(reviewer))
 
-  if (!hasName(admissions_data, 'team_action')) admissions_data$team_action <- NA_character_
+  if (!hasName(admissions_data, decision_col)) admissions_data[[decision_col]] <- NA_character_
 
-  na_team_action_idx <- which(is.na(admissions_data$team_action))
-  n <- length(na_team_action_idx)
+  to_decide_idx <- which(is.na(admissions_data[[decision_col]]))
+  n <- length(to_decide_idx)
   i <- 1
+
+  decision_str <- function(decision = NA) {
+    if (!is.na(decision))
+      admissions_data[[decision_col]][[row_i]] <<- paste(toupper(reviewer), Sys.Date(), decision)
+    i <<- i + 1
+  }
+
   tryCatch({
     while (i <= n) {
-      row_i <- na_team_action_idx[i]
+      row_i <- to_decide_idx[i]
       action <- display_next(admissions_data[row_i, ], i, n)
-      switch(action,
+      switch(substring(action, 1, 1),
+             decision_str('accepted'), # default
+             'a' = decision_str('accepted'),
+             'r' = decision_str('rejected'),
+             '#' = decision_str(), # skipped (change to 's'?)
+             'n' = decision_str(substring(action, 3)), # note added
              'x' = i <- Inf,
              'q' = i <- Inf,
-             '#' = i <- i + 1,
              'u' = {
                i <- i - 1
-               last_row <- na_team_action_idx[i]
-               admissions_data$team_action[[last_row]] <- NA_character_
-             },
-             {
-               admissions_data$team_action[[row_i]] <- paste(toupper(reviewer), Sys.Date())
-               i <- i + 1
+               last_row <- to_decide_idx[i]
+               admissions_data[[decision_col]][[last_row]] <- NA_character_
              }
       )
 
@@ -174,10 +187,10 @@ step_through_admissions <- function(admissions_data, reviewer) {
     warning('Interrupted.\nYour progress so far has been saved.\n')
     return(admissions_data)
   },
-  finally = progress_summary(admissions_data)
+  finally = progress_summary(admissions_data, decision_col)
   )
 
-  admissions_data
+  print(admissions_data, decision_col = decision_col[[1]])
 }
 
 
@@ -196,7 +209,7 @@ display_next <- function(d, i, n) {
   cat(sprintf('\033[2m%s\033[0m\n', paste(d$forename, d$surname)))
   u <- d$uun
   p <- d$programme_code
-  cat(sprintf('\033[%im (%s) \033[0m\n\033[1m%s\033[0m\n', clrs[p], p, u))
+  cat(sprintf('\033[30;1;%im (%s) \033[0m\n\033[1m%s\033[0m\n', clrs[p], p, u))
 
   # could present a menu here?
   readline(paste('Action? '))
@@ -204,10 +217,10 @@ display_next <- function(d, i, n) {
 
 #' Called for side effect. Returns NULL.
 #'
-progress_summary <- function(d) {
-  actioned  <- sum(!is.na(d$team_action))
-  remaining <- sum(is.na(d$team_action))
+progress_summary <- function(d, decision_col) {
+  actioned  <- sum(!is.na(d[[decision_col]]))
+  remaining <- sum(is.na(d[[decision_col]]))
   cat(sprintf('Done  : %03s\nTo do : %03s\n',
               actioned, remaining))
-  if (!remaining) cat('🎉 🥳 💃 😁')
+  if (!remaining) cat('🎉 🥳 💃 😁\n\n')
 }
