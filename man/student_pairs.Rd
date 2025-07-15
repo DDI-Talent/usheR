@@ -59,7 +59,6 @@ attendance2 <- take_attendance(full_class = class_list,
 
 # Generate pairings using Week 1 as history
 pairs_week2 <- student_pairs(attendance = attendance2,
-                             pair_history = pairs_week1,
                              group_size = 2)
 
 \dontrun{

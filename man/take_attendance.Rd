@@ -8,8 +8,7 @@ take_attendance(
   full_class,
   present_students,
   file_path = NULL,
-  session_id = NULL,
-  append = FALSE
+  session_id = NULL
 )
 }
 \arguments{
@@ -25,9 +24,6 @@ attendance record will be saved or appended.}
 
 \item{session_id}{Optional. A label for the session (e.g., \code{"week1"}). If
 \code{NULL}, the current date and time is used.}
-
-\item{append}{Logical. If TRUE, appends to an existing file specified in
-\code{file_path}. If FALSE, overwrites the file. Default is \code{FALSE}.}
 }
 \value{
 A tibble with columns: \code{name} (student name), \code{present} (logical),
@@ -42,11 +38,10 @@ indicator of presence (\code{TRUE}/\code{FALSE}), and a session ID.
 }
 \details{
 If no session ID is provided, the function automatically uses the current
-date and time in the format \code{"dd-mm-yy_HHMM"}. You can optionally write the
-output to a CSV file using the file_path argument. If append = FALSE
-(default), the file will be created or overwritten. If append = TRUE, the new
-attendance will be added to the bottom of an existing attendance log. This
-allows you to accumulate attendance across sessions in a single file.
+date and time in the format \code{"dd-mm-yy_HHMM"}. If \code{file_path} is provided,
+the output will be automatically \strong{appended} to an existing file (if it
+exists) or saved as a new file (if it doesn't), allowing you to accumulate
+attendance records across sessions.
 }
 \examples{
 # Load USJudgeRatings dataset and use as full class list
@@ -57,29 +52,28 @@ class_list <- data.frame(id = 1:nrow(USJudgeRatings),
 print(class_list$name)
 
 # week 1: take attendance. Suppose students 1:9, 15, 18, 20:22 are present.
-attendance_week1 <- take_attendance(full_class = class_list,
+attendance <- take_attendance(full_class = class_list,
                               present_students = c(1:9, 15, 18, 20:22),
                               session_id = "CourseX_Week1")
 
 # week 2: take attendance. Suppose students 1:5, 12, 14 are present.
-attendance_week2 <- take_attendance(full_class = class_list,
+attendance <- take_attendance(full_class = class_list,
                               present_students = c(1:5, 12, 14),
                               session_id = "CourseX_Week2")
 
-# You can also optionally save the attendance to csv files, or append each week
+# You can also optionally save the attendance to csv file which is appended to each week
 \dontrun{
 # Save Week 1 to CSV (creates new file)
-week1 <- take_attendance(full_class = class_list,
+attendance <- take_attendance(full_class = class_list,
                          present_students = 1:5,
                          session_id = "Week_1",
                          file_path = "attendance_log.csv")
 
 # Append Week 2 to same file
-week2 <- take_attendance(full_class = class_list,
+attendance <- take_attendance(full_class = class_list,
                          present_students = c(2, 4, 6, 8),
                          session_id = "Week_2",
-                         file_path = "attendance_log.csv",
-                         append = TRUE)
+                         file_path = "attendance_log.csv")
 }
 
 
