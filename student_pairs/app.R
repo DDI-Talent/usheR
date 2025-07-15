@@ -10,8 +10,9 @@
 library(shiny)
 
 # Load functions
-source("R/attendance_function.R")
-source("R/pairs-maker.R")
+source("../R/attendance_function.R")
+source("../R/pairs-maker.R")
+
 
 # Define UI for application that generates student pairs
 ui <- fluidPage(
