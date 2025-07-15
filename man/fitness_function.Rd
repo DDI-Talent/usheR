@@ -21,8 +21,8 @@ Counts the number of pairs in the current group that occur in the previous recor
 \dontrun{
 
 record <- list(
-              c('AAA-BBB','WWW-XXX'),
-              c('YYY-ZZZ', 'CCC-DDD')
+              c('AAA~~BBB','WWW~~XXX'),
+              c('YYY~~ZZZ', 'CCC~~DDD')
           )
 
 pairs <- list(

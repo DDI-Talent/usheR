@@ -31,7 +31,7 @@ Additionally, users can supply a record of previous pairings to inform the
 fitness computation.
 }
 \examples{
-## for 1 week
+#' ## for 1 week
 num_students <- 8
 create_pairs(LETTERS[1:num_students])
 
