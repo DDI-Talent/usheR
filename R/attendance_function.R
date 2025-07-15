@@ -7,11 +7,10 @@
 #' indicator of presence (`TRUE`/`FALSE`), and a session ID.
 #'
 #' If no session ID is provided, the function automatically uses the current
-#' date and time in the format `"dd-mm-yy_HHMM"`. You can optionally write the
-#' output to a CSV file using the file_path argument. If append = FALSE
-#' (default), the file will be created or overwritten. If append = TRUE, the new
-#' attendance will be added to the bottom of an existing attendance log. This
-#' allows you to accumulate attendance across sessions in a single file.
+#' date and time in the format `"dd-mm-yy_HHMM"`. If `file_path` is provided,
+#' the output will be automatically **appended** to an existing file (if it
+#' exists) or saved as a new file (if it doesn't), allowing you to accumulate
+#' attendance records across sessions.
 #'
 #' @param full_class A character vector of student names or a data frame with a
 #'   `name` column.
@@ -22,8 +21,6 @@
 #'   attendance record will be saved or appended.
 #' @param session_id Optional. A label for the session (e.g., `"week1"`). If
 #'   `NULL`, the current date and time is used.
-#' @param append Logical. If TRUE, appends to an existing file specified in
-#'   `file_path`. If FALSE, overwrites the file. Default is `FALSE`.
 #'
 #' @returns A tibble with columns: `name` (student name), `present` (logical),
 #'   and `session` (session ID).
@@ -38,37 +35,35 @@
 #' print(class_list$name)
 #'
 #' # week 1: take attendance. Suppose students 1:9, 15, 18, 20:22 are present.
-#' attendance_week1 <- take_attendance(full_class = class_list,
+#' attendance <- take_attendance(full_class = class_list,
 #'                               present_students = c(1:9, 15, 18, 20:22),
 #'                               session_id = "CourseX_Week1")
 #'
 #' # week 2: take attendance. Suppose students 1:5, 12, 14 are present.
-#' attendance_week2 <- take_attendance(full_class = class_list,
+#' attendance <- take_attendance(full_class = class_list,
 #'                               present_students = c(1:5, 12, 14),
 #'                               session_id = "CourseX_Week2")
 #'
-#' # You can also optionally save the attendance to csv files, or append each week
+#' # You can also optionally save the attendance to csv file which is appended to each week
 #' \dontrun{
 #' # Save Week 1 to CSV (creates new file)
-#' week1 <- take_attendance(full_class = class_list,
+#' attendance <- take_attendance(full_class = class_list,
 #'                          present_students = 1:5,
 #'                          session_id = "Week_1",
 #'                          file_path = "attendance_log.csv")
 #'
 #' # Append Week 2 to same file
-#' week2 <- take_attendance(full_class = class_list,
+#' attendance <- take_attendance(full_class = class_list,
 #'                          present_students = c(2, 4, 6, 8),
 #'                          session_id = "Week_2",
-#'                          file_path = "attendance_log.csv",
-#'                          append = TRUE)
+#'                          file_path = "attendance_log.csv")
 #' }
 #'
 #'
 take_attendance <- function(full_class,
                             present_students,
                             file_path = NULL,
-                            session_id = NULL,
-                            append = FALSE) {
+                            session_id = NULL) {
 
   # If it is a data frame, extract the `name` column: character vector of names
   # if it is a list, unlist to a character vector of names
@@ -103,8 +98,7 @@ take_attendance <- function(full_class,
     values_from = present
   )
 
-  # Save output - default is to NOT append
-  attendance <- save_output(attendance_wide, file_path, append = append)
+  attendance <- save_output(attendance_wide, file_path)
 
   return(attendance)
 
@@ -115,24 +109,23 @@ take_attendance <- function(full_class,
 
 
 
-#'Save or append a data frame to CSV
+#' Save a data frame to CSV
 #'
-#'This helper function saves a data frame to a specified `.csv` file path,
-#'either by overwriting the file or appending to it. If `append = TRUE` and the
-#'file already exists, the existing contents are read and combined with the new
-#'data before being written back to the file. If `file_path` is `NULL`, the data
-#'frame is returned without saving.
+#' This helper function saves a data frame to a specified `.csv` file path.
+#' If the file already exists, the new data is automatically appended by merging
+#' on the `name` column. This allows multiple attendance sessions to be saved
+#' into a single growing log file. If `file_path` is `NULL`, the data frame is
+#' returned without saving.
 #'
-#'@param dataframe A data frame to be saved.
-#'@param file_path A character string specifying the CSV file path.
-#'@param append Logical. If `TRUE`, appends to an existing file if it exists. If
-#'  `FALSE`, the file is overwritten. Default is `FALSE`.
+#' @param dataframe A data frame to be saved.
+#' @param file_path A character string specifying the CSV file path.
 #'
-#'@returns Returns the (optionally saved) data frame.
+#' @returns Returns the (optionally saved) data frame.
 #'
 #' @examples
 #' # Load USJudgeRatings dataset and use as full class list
-#' class_list <- data.frame(name = rownames(USJudgeRatings))
+#' class_list <- data.frame(id = 1:nrow(USJudgeRatings),
+#'                          name = rownames(USJudgeRatings))
 #'
 #' # print full class list to view row indices
 #' print(class_list$name)
@@ -140,23 +133,21 @@ take_attendance <- function(full_class,
 #' # Below is an example for saving
 #' \dontrun{
 #' # Week 1: take attendance
-#' week1 <- take_attendance(full_class = class_list,
+#' attendance <- take_attendance(full_class = class_list,
 #'                          present_students = c(1, 2, 4),
 #'                          file_path = "attendance.csv")  # saved using save_output()
 #'
 #' # Week 2: take attendance and append to same file
-#' week2 <- take_attendance(full_class = class_list,
+#' attendance <- take_attendance(full_class = class_list,
 #'                          present_students = c(1, 3, 4, 5, 7, 10, 15, 17),
-#'                          file_path = "attendance.csv",
-#'                          append = TRUE)
+#'                          file_path = "attendance.csv")
 #'
 #'}
 save_output <- function(dataframe,
-                        file_path,
-                        append = FALSE) {
+                        file_path) {
 
   if (!is.null(file_path)) {
-    if (append && file.exists(file_path)) {
+    if (file.exists(file_path)) {
       existing <- readr::read_csv(file_path, show_col_types = FALSE)
       dataframe <- dplyr::full_join(dataframe, existing, by = "name")
     }
