@@ -296,7 +296,6 @@ convert_to_list <- function(data_frame) {
 #'
 #' # Generate pairings using Week 1 as history
 #' pairs_week2 <- student_pairs(attendance = attendance2,
-#'                              pair_history = pairs_week1,
 #'                              group_size = 2)
 #'
 #' \dontrun{
@@ -340,7 +339,7 @@ student_pairs <- function(attendance,
   data_frame <- data_frame[!is.na(data_frame$pairing), ]
 
   # Save if file_path is provided
-  save_output(data_frame, file_path, append = FALSE)
+  save_output(data_frame, file_path)
 
   return(data_frame)
 
