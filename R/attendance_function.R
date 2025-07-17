@@ -149,7 +149,11 @@ save_output <- function(dataframe,
   if (!is.null(file_path)) {
     if (file.exists(file_path)) {
       existing <- readr::read_csv(file_path, show_col_types = FALSE)
-      dataframe <- dplyr::full_join(dataframe, existing, by = "name")
+      if ("name" %in% names(dataframe)) {
+        dataframe <- dplyr::full_join(dataframe, existing, by = "name")
+      } else {
+        dataframe <- rbind(dataframe, existing)
+      }
     }
 
     write.csv(dataframe, file_path, row.names = FALSE)
