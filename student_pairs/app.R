@@ -8,11 +8,14 @@
 #
 
 library(shiny)
+library(DT)
 
 # Load functions
 source("../R/attendance_function.R")
 source("../R/pairs-maker.R")
 
+# Define file path to pairing history file
+pair_history_path <- "student_pairs.csv"
 
 # Define UI for application that generates student pairs
 ui <- fluidPage(
@@ -25,14 +28,13 @@ ui <- fluidPage(
         sidebarPanel(
           fileInput("attendance_file", "Upload attendance CSV"),
           numericInput("group_size", "Group size", value = 2, min = 2),
-          numericInput("population", "Search iterations", value = 1000, min = 10),
           actionButton("generate", "Generate Pairs"),
           br(),
           downloadButton("download_pairs", "Download Pairs")
           ),
 
         mainPanel(
-          tableOutput("pair_table")
+          DT::dataTableOutput("pair_table")
         )
     )
 )
@@ -40,7 +42,7 @@ ui <- fluidPage(
 # Define server logic
 server <- function(input, output, session) {
 
-  pairs_data <- reactiveVal()
+  generated_pairs <- reactiveVal()
 
   observeEvent(input$generate, {
     req(input$attendance_file)
@@ -48,17 +50,33 @@ server <- function(input, output, session) {
     attendance <- read.csv(input$attendance_file$datapath)
 
     # Run pairing
-    pairs <- student_pairs(
+    pair_table <- student_pairs(
       attendance = attendance,
       group_size = input$group_size,
-      population = input$population
+      file_path = pair_history_path  # read/write pairing history
     )
 
-    pairs_data(pairs)
+    generated_pairs(pair_table)
   })
 
-  output$pair_table <- renderTable({
-    pairs_data()
+  output$pair_table <- DT::renderDataTable({
+    df <- generated_pairs()
+    req(df)
+
+    # Make pairs more readable
+    df$pairing <- gsub("~~", " & ", df$pairing)
+    colnames(df) <- c("Week", "Group", "Student Pair")
+
+    DT::datatable(
+      df,
+      rownames = FALSE,
+      options = list(
+        pageLength = 10,
+        order = list(list(0, 'desc')),
+        columnDefs = list(list(className = 'dt-left', targets = "_all"))
+      ),
+      class = "compact stripe hover"
+    )
   })
 
   output$download_pairs <- downloadHandler(
@@ -66,7 +84,7 @@ server <- function(input, output, session) {
       paste0("student_pairs_", Sys.Date(), ".csv")
     },
     content = function(file) {
-      write.csv(pairs_data(), file, row.names = FALSE)
+      write.csv(generated_pairs(), file, row.names = FALSE)
     }
   )
 }
