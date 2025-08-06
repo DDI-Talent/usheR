@@ -9,5 +9,4 @@ devtools::install_github('ddi-talent/usheR')
 library(usheR)
 update_from_github()
 ```
-
 Once you run it, your R studio will install some packages and bring the most recent course notes from github to your R project.
