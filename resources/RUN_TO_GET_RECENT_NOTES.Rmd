@@ -2,7 +2,6 @@
 title: "RUN_TO_GET_RECENT_NOTES"
 output: html_document
 ---
-
 Run below code block to get the most recent notes from github.
 
 To run a grey code block below, click anywhere inside it and then click the green play button in top left corner and click.
