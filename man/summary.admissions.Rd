@@ -4,7 +4,7 @@
 \alias{summary.admissions}
 \title{Summary of admissions data}
 \usage{
-\method{summary}{admissions}(object, ...)
+\method{summary}{admissions}(object, decision_col = notes, ...)
 }
 \description{
 Count the number of decision statuses per qualification.

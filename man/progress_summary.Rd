@@ -4,7 +4,7 @@
 \alias{progress_summary}
 \title{Called for side effect. Returns NULL.}
 \usage{
-progress_summary(d)
+progress_summary(d, decision_col)
 }
 \description{
 Called for side effect. Returns NULL.

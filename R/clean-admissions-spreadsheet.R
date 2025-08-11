@@ -122,9 +122,16 @@ print.admissions <- function(x, decision_col = team_action, all_cols = FALSE, ..
 #' information for searching EUCLID is shown in the console, with the prompt
 #' `Action?`. The following actions can be taken:
 #' - `Enter`: The default action
-#'     - A decision was made, and is recorded with reviewer's initials and date stamp.
+#'     - A decision was made, and is recorded with reviewer's initials and date stamp, and no further note.
+#' - `a`: Accept
+#'     - Can add arbitrary note `a A note on acceptance decision`
+#' - `r`: Reject
+#'     - Can add arbitrary note `a A note on rejection decision`
+#' - `n`: add an arbitrary note
+#'     - Useful if no decision was made
+#'     - E.g. `n A note about why no decision was made`
 #' - `#`: Skip
-#'     - No decision was made. Can be returned to later.
+#'     - No decision was made; no comment added; note column remains `NA`.
 #' - `u`: Undo
 #'     - Rewinds to the previous application.
 #' - `x`: Exit
@@ -166,11 +173,11 @@ step_through_admissions <- function(admissions_data, reviewer, decision_col = 't
       row_i <- to_decide_idx[i]
       action <- display_next(admissions_data[row_i, ], i, n)
       switch(substring(action, 1, 1),
-             decision_str('accepted'), # default
-             'a' = decision_str('accepted'),
-             'r' = decision_str('rejected'),
+             decision_str('Accept'), # default
+             'a' = decision_str(paste('Accept:', substring(action, 3))),
+             'r' = decision_str(paste('Reject:', substring(action, 3))),
+             'n' = decision_str(paste('Note:', substring(action, 3))), # note added
              '#' = decision_str(), # skipped (change to 's'?)
-             'n' = decision_str(substring(action, 3)), # note added
              'x' = i <- Inf,
              'q' = i <- Inf,
              'u' = {

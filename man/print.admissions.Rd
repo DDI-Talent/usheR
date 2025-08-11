@@ -4,7 +4,7 @@
 \alias{print.admissions}
 \title{Print method for admissions object}
 \usage{
-\method{print}{admissions}(x, all_cols = FALSE, ...)
+\method{print}{admissions}(x, decision_col = team_action, all_cols = FALSE, ...)
 }
 \arguments{
 \item{x}{Data frame of class \code{admissions}}
@@ -15,6 +15,6 @@
 }
 \description{
 By default shows only a selected minimum of columns. To see all columns use
-\code{all_cols = TRUE}. Column \code{team_action} is placed at the front of hte data frame for easy inspection, but is actually the final column of the admissions data set.
+\code{all_cols = TRUE}. Column \code{decision_col} is placed at the front of the data frame for easy inspection, but is actually the final column of the admissions data set.
 }
 \keyword{internal}

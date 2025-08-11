@@ -2,12 +2,20 @@
 % Please edit documentation in R/clean-admissions-spreadsheet.R
 \name{filter_admissions}
 \alias{filter_admissions}
-\title{Flter admissions xlsx spreadsheat}
+\title{Filter admissions xlsx spreadsheat}
 \usage{
-filter_admissions(new_admissions_spreadsheet, reviewed_spreadsheet = NULL)
+filter_admissions(
+  new_admissions_spreadsheet,
+  reviewed_spreadsheet = NULL,
+  decision_col = "team_action"
+)
 }
 \arguments{
-\item{spreadsheet_path}{Character; Path to admissions spreadsheet}
+\item{new_admissions_spreadsheet}{Character; Path to admissions spreadsheet. Assumed to be the most recent spreadsheet}
+
+\item{reviewed_spreadsheet}{Character; Path to previous will filter any that have had a note added already.}
+
+\item{decision_col}{Character; Name of column used for recording decisions. Can be a vector of length two if each spreadsheet has decision col with a different name. Current default is \code{team_action}}
 }
 \value{
 Data frame filtered for DSHSC applications. programme applications.
@@ -21,7 +29,7 @@ Science for Health and Social Care" programmes (see
 }
 \details{
 No columns are removed, so the function should always work as intended, as
-long as the \verb{Programme Code} column is correct, and always called \verb{Programme Code}.
+long as the \verb{Programme Code} column is correct, and is always called \verb{Programme Code}.
 }
 \examples{
 

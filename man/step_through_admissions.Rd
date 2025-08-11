@@ -4,7 +4,11 @@
 \alias{step_through_admissions}
 \title{Step through admissions one-by-one}
 \usage{
-step_through_admissions(admissions_data, reviewer)
+step_through_admissions(
+  admissions_data,
+  reviewer,
+  decision_col = "team_action"
+)
 }
 \arguments{
 \item{reviewer}{Character; Reviewer initials. Must be provided}
@@ -21,11 +25,24 @@ information for searching EUCLID is shown in the console, with the prompt
 \itemize{
 \item \code{Enter}: The default action
 \itemize{
-\item A decision was made, and is recorded with reviewer's initials and date stamp.
+\item A decision was made, and is recorded with reviewer's initials and date stamp, and no further note.
+}
+\item \code{a}: Accept
+\itemize{
+\item Can add arbitrary note \verb{a A note on acceptance decision}
+}
+\item \code{r}: Reject
+\itemize{
+\item Can add arbitrary note \verb{a A note on rejection decision}
+}
+\item \code{n}: add an arbitrary note
+\itemize{
+\item Useful if no decision was made
+\item E.g. \verb{n A note about why no decision was made}
 }
 \item \verb{#}: Skip
 \itemize{
-\item No decision was made. Can be returned to later.
+\item No decision was made; no comment added; note column remains \code{NA}.
 }
 \item \code{u}: Undo
 \itemize{
