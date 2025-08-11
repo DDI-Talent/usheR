@@ -206,7 +206,7 @@ col_group <- function(ncl = NULL, widths = NULL) {
 #'               .row_highlight = 'background-color: #000000;',
 #'               `selector with spaces` = 'property: value;')
 #'
-update_table_style <- function(...) {
+update_table_style <- function(..., table_class = 'jwTab') {
   # cat(table_css)
 
   default_rules <- c(
@@ -221,7 +221,8 @@ update_table_style <- function(...) {
 
   new_rules <- c(...)
   old_names <- names(default_rules)
-  new_names <- names(new_rules)
+  table_class <- sub('^\\.?', '.', table_class)
+  new_names <- paste(table_class, names(new_rules))
   shared_names <- intersect(old_names, new_names)
 
   default_rules[shared_names] <- sapply(shared_names, \(n) paste(default_rules[[n]], new_rules[[n]]))

@@ -11,7 +11,7 @@ do_html_table(
   table_caption = NULL,
   style = NULL,
   file = "temp_learn-table.html",
-  interactive = interactive()
+  is_interactive = interactive()
 )
 }
 \arguments{
@@ -30,7 +30,9 @@ selectors and the values are the CSS properties.}
 to \code{temp-table.html}}
 }
 \value{
-If run in an interactive R session, the HTML file generated is opened for manual editing. Otherwise, returns the path to the created HTML file.
+If run in an interactive R session, the HTML file generated is
+opened for manual editing. Otherwise, returns the path to the created HTML
+file.
 }
 \description{
 Creates a complete HTML table skeleton, including the header, body, and
@@ -51,12 +53,11 @@ simple and straightforward way to create minimal HTML tables, allowing for
 easy (but minimal) customization.
 \subsection{Adding css rules}{
 
-New style rules can be added by providing a named vector of CSS
-declarations. The names are the "selectors", and the values should follow
-the usual CSS declaration syntax of \code{property: value}. Selector may include
-non-syntactic characters such as spaces or dashes, in which case they must
-be enclosed in backticks or quotes. For example, \verb{selector with spaces} or
-\verb{.a-class tr > td}, as shown in the examples.
+New style rules can be added by providing a named vector of CSS declarations.
+The names are the "selectors", and the values should follow the usual CSS
+declaration syntax of \code{property: value}. Selector may include non-syntactic
+characters such as spaces or dashes, in which case they must be enclosed in
+backticks or quotes. For example, \verb{selector with spaces} or \verb{.a-class tr > td}, as shown in the examples.
 
 Declarations added to existing selectors are appended to the existing
 declarations for those selectors. Original declarations are not removed.
@@ -68,10 +69,11 @@ Rules for new selectors are appended to the end of the rules set.
 
 # Create a blank HTML table skeleton
 # with column names and specicified number of rows
+html_table_file <- tempfile('html-table_', fileext = '.html')
 do_html_table(c('col_1', 'col_2', 'col_3'), n_rows = 2)
 
 # Create HTML table filled with values from a data frame
-do_html_table(BOD)
+do_html_table(BOD, file = html_table_file)
 
 do_html_table(c('Criteria', 'Description', 'Weight'),
               n_rows = 2)
