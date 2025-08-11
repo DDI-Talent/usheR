@@ -7,7 +7,8 @@ Version: 0.4.2
 >>>>>>> f0c6074 (Improve admissions reviewing functionality)
 Authors@R: c(
     person("John", "Wilson", , "43386915+jmcvw@users.noreply.github.com", role = c("aut", "cre")),
-    person("Nicola", "Burns", , "Nburns2@ed.ac.uk", role = c("aut"))
+    person("Nicola", "Burns", , "Nburns2@ed.ac.uk", role = c("aut")),
+    person("Pawel", "Orzechowski", , "24914654+drpawelo@users.noreply.github.com", role = c("aut"))
     )
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
