@@ -1,0 +1,21 @@
+.pair-group-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+    width: 60%;
+}
+
+.pair-group {
+  font-weight: bold;
+  font-size: 1.5em;
+  color: #0000ff;
+}
+
+.individuals {
+  font-size: 2rem;
+}
+
+.shiny-output-error-validation {
+  font-size: 3.2rem;
+}

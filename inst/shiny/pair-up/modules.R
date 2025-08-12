@@ -5,29 +5,32 @@ library(shinyjs)
 library(DT)
 library(clipr)
 
-format_pair_list <- function(pairs, gr_num) {
+create_pair_divs <- function(pairs, gr_num) {
   pairs <- strsplit(pairs, '~~')[[1]]
 
-  g <- htmltools::p(paste('Group', gr_num), class = 'group')
+  g <- htmltools::p(class = 'pair-group', paste('Group', gr_num))
   ul <- htmltools::tags$ul(class = 'individuals', lapply(pairs, tags$li))
 
   paste(
-    htmltools::tags$div(class = 'group-container', g, '\n', ul
-    )
-  ) |>
+    htmltools::tags$div(class = 'pair-group-container', g, '\n', ul
+    )) |>
     htmltools::HTML()
 }
 
 instructions <- function(id) {
   ns <- NS(id)
+  NULL
+  # includeMarkdown('www/instructions.Rmd')
   includeHTML('www/instructions.html')
+  # source('www/_tmp_ui-q-instr.R')$value
 }
 
 selectAttendingStudentsUI <- function(id) {
   ns <- NS(id)
   tagList(
+
     sidebarLayout(
-      sidebarPanel(
+      sidebarPanel(width = 4,
         fileInput(ns('attendance_file'),
                   'Choose Attendance File',
                   accept =  '.csv'
@@ -48,22 +51,26 @@ selectAttendingStudents <- function(id) {
     id,
     function(input, output, session) {
       ns <- session$ns
+
       class_list <- reactive({
-        d <- read.csv(input$attendance_file$datapath)
+        d <- read.csv('large_class_list.csv')
+        # d <- read.csv(input$attendance_file$datapath)
+        names(d) <- tolower(names(d))
         d[order(d[[1]]), , drop = FALSE]
       })
 
 
       observe({
         updateActionButton(inputId = 'tgl_present_absent',
-                           label = c('Present', 'Absent')[input$tgl_present_absent %% 2 + 1])
+                           label = c('Add students', 'Remove students')[input$tgl_present_absent %% 2 + 1])
       }) |> bindEvent(input$tgl_present_absent)
 
       output$make_student_selection <- renderUI({
-
+        req(#input$attendance_file,
+            hasName(class_list(), 'name'))
         tagList(
-          actionButton(ns('tgl_present_absent'), 'Present'),
-
+          actionButton(ns('tgl_present_absent'), 'Add students'),
+          saveUI(ns('save_attendance'), 'Save attendance'),
           selectizeInput(ns('select_students'), 'Present',
                          class_list()$name, multiple = TRUE)
         )
@@ -72,12 +79,7 @@ selectAttendingStudents <- function(id) {
 
 
       available_for_pairing <- reactive({
-        req(class_list(), input$select_students)
-        validate(
-          need(hasName(class_list(), 'name'),
-               'Class list data must have a name column'
-          )
-        )
+
 
         filter_by_selection <- expr(class_list()$name %in% input$select_students)
         if (isTruthy(input$tgl_present_absent %% 2)) filter_by_selection <- expr(!(!!filter_by_selection))
@@ -88,11 +90,21 @@ selectAttendingStudents <- function(id) {
       })
 
       output$n_present <- renderText({
-        req(input$select_students)
+        req(length(input$select_students) > 0)
         paste('Class size: ', nrow(available_for_pairing()))
       })
 
-      output$present_students <- renderTable({ available_for_pairing() })
+      output$present_students <- renderTable({
+        data_is_valid <- tryCatch(hasName(class_list(), 'name'), error = \(e) F)
+        validate(
+          # need(input$attendance_file, 'Upload class list to select students'),
+          need(data_is_valid, 'Ensure class list has a `name` column')
+        )
+
+        available_for_pairing()
+      })
+
+        saveServer('save_attendance', available_for_pairing, 'attendance.csv', reactive(input$select_students))
 
       reactive(available_for_pairing()$name)
 
@@ -107,10 +119,10 @@ paringUI <- function(id) {
         numericInput(ns('group_size'), 'Group Size', 2, min = 2),
         actionButton(ns('btn_pair'), 'Pair Up'),
         actionButton(ns('btn_copy_pairs'), HTML(paste(icon('clipboard'), 'Copy to clipboard', collapse = ''))),
-        dlCsvUI(ns('save'), 'Save pairs')
+        saveUI(ns('save'), 'Save pairs')
       ),
       mainPanel(
-        htmlOutput(ns('pairs'))
+          htmlOutput(ns('pairs'))
       )
     )
   )
@@ -135,21 +147,20 @@ paring <- function(id, attendance) {
 
       pairs_list <- reactive({
         create_pairs(attendance(), group_size = input$group_size)[[1]]
-
+        # create_pairs(attendance()$name, group_size = input$group_size)[[1]]
       }) |>
         bindEvent(input$btn_pair)
 
       output$pairs <- renderText({
-        purrr::imap_chr(pairs_list(), ~format_pair_list(.x, .y)) |>
+        purrr::imap_chr(pairs_list(), ~create_pair_divs(.x, .y)) |>
           paste0(collapse = '') |> htmltools::HTML()
       })
 
-
-      dlCsv('save', pairs_list, 'pairs.csv')
+      # saveServer('save_pairs', pairs_list, 'pairs.csv', reactive(TRUE))
     })
 }
 
-attendanceRecordUI <- function(id) {
+reviewAttendanceUI <- function(id) {
   ns <- NS(id)
   tagList(
     sidebarLayout(
@@ -163,11 +174,11 @@ attendanceRecordUI <- function(id) {
   )
 }
 
-attendanceRecord <- function(id, current_tab) {
+reviewAttendance <- function(id, current_tab) {
   moduleServer(
     id,
     function(input, output, session) {
-
+      # current_tab = reactive(input$tabs)
       output$attendance_history <- renderTable({
 
         read.csv('large_class_list.csv') |>
@@ -187,75 +198,32 @@ attendanceRecord <- function(id, current_tab) {
     })
 }
 
-attendanceDTUI <- function(id) {
+
+
+
+
+
+
+
+saveUI <- function(id, label = "Download CSV") {
   ns <- NS(id)
   tagList(
-    sidebarLayout(
-      sidebarPanel(
-        fileInput(ns('attendance_file'),
-                  'Choose Attendance File',
-                  accept =  '.csv'
-        ),
-
-        invertSelectionUI(ns('invert')),
-        dlCsvUI(ns('save'), 'Save attendance')
-      ),
-
-      mainPanel(
-        textOutput(ns('n_present')),
-        dataTableOutput(ns('dt_table'))
-      )
+    shinyjs::hidden(
+      span(downloadButton(ns("download"), label),
+          id = ns('save-btn-container'), container = 'inline')
     )
   )
 }
 
-attendanceDT <- function(id) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      class_list <- reactive({
-        d <- read.csv(input$attendance_file$datapath)
-        d[order(d[[1]]), , drop = FALSE]
-      })
-
-      output$dt_table <- DT::renderDT({
-        DT::datatable(
-          class_list(),
-          options = list(
-            dom = "t",
-            pageLength = nrow(class_list()),
-            ordering = FALSE
-          ),
-          rownames = FALSE,
-          width = '100%'
-        )
-      })
-
-      selected_students <- reactive({
-        idx <- as.integer(input$dt_table_rows_selected)
-
-        class_list()[idx, 'name']
-      })
-
-      output$n_present <- renderText({
-        req(selected_students())
-        paste('Present students (', length(selected_students()), ')')
-      })
-
-      invertSelection('invert', 'dt_table', class_list, reactive(input$dt_table_rows_selected))
-
-    })
-}
-
-
-
-dlCsvUI <- function(id, label = "Download CSV") {
-  ns <- NS(id)
-  downloadButton(ns("download"), label)
-}
-
-dlCsv <- function(id, data_reactive, filename = "data.csv") {
+saveServer <- function(id, data_reactive, filename = "data.csv", show_save_button) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    observe({
+      if (isTruthy(show_save_button())) shinyjs::show("save-btn-container")
+      else  shinyjs::hide("save-btn-container")
+    })
+
     output$download <- downloadHandler(
       filename = function() {
         filename
@@ -265,28 +233,4 @@ dlCsv <- function(id, data_reactive, filename = "data.csv") {
       }
     )
   })
-}
-
-
-invertSelectionUI <- function(id) {
-  ns <- NS(id)
-  tagList(
-    actionButton(ns('invert'), 'Invert Selection')
-  )
-}
-
-invertSelection <- function(id, tableId, data, rows_selected) {
-  moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    print("Creating proxy")
-    proxy <- DT::dataTableProxy(tableId, session)
-
-session$onFlushed(function() {
-    observe({
-      all_rows <- seq_len(nrow(data()))
-      new_selection <- setdiff(all_rows, rows_selected())
-      DT::selectRows(proxy, new_selection)
-    }) |> bindEvent(input$invert)
-  })
-})
 }
