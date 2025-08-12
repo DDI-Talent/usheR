@@ -7,12 +7,12 @@ library(clipr)
 
 format_pair_list <- function(pairs, gr_num) {
   pairs <- strsplit(pairs, '~~')[[1]]
+
   g <- htmltools::p(paste('Group', gr_num), class = 'group')
   ul <- htmltools::tags$ul(class = 'individuals', lapply(pairs, tags$li))
 
   paste(
-    htmltools::tags$div(class = 'group-container',
-                        g, '\n', ul
+    htmltools::tags$div(class = 'group-container', g, '\n', ul
     )
   ) |>
     htmltools::HTML()
@@ -32,12 +32,12 @@ selectAttendingStudentsUI <- function(id) {
                   'Choose Attendance File',
                   accept =  '.csv'
         ),
-        uiOutput(ns('selected_students'))
+        uiOutput(ns('make_student_selection'))
       ),
 
       mainPanel(
         textOutput(ns('n_present')),
-        tableOutput(ns('attendance'))
+        tableOutput(ns('present_students'))
       )
     )
   )
@@ -48,7 +48,6 @@ selectAttendingStudents <- function(id) {
     id,
     function(input, output, session) {
       ns <- session$ns
-
       class_list <- reactive({
         d <- read.csv(input$attendance_file$datapath)
         d[order(d[[1]]), , drop = FALSE]
@@ -56,39 +55,41 @@ selectAttendingStudents <- function(id) {
 
 
       observe({
-        updateActionButton(inputId = 'present_absent',
-                           label = c('Present', 'Absent')[input$present_absent %% 2 + 1])
-      }) |> bindEvent(input$present_absent)
+        updateActionButton(inputId = 'tgl_present_absent',
+                           label = c('Present', 'Absent')[input$tgl_present_absent %% 2 + 1])
+      }) |> bindEvent(input$tgl_present_absent)
 
-      output$selected_students <- renderUI({
+      output$make_student_selection <- renderUI({
+
         tagList(
-          actionButton(ns('present_absent'), 'Present'),
+          actionButton(ns('tgl_present_absent'), 'Present'),
 
-          selectizeInput(ns('present'), 'Present',
+          selectizeInput(ns('select_students'), 'Present',
                          class_list()$name, multiple = TRUE)
         )
       })
 
-      output$n_present <- renderText({
-        req(input$present)
-        paste('Class size: ', nrow(available_for_pairing()))
-      })
 
 
       available_for_pairing <- reactive({
-        req(class_list(), input$present)
+        req(class_list(), input$select_students)
         validate(
           need(hasName(class_list(), 'name'),
                'Class list data must have a name column'
           )
         )
 
-        filter_by_selection <- expr(class_list()$name %in% input$present)
-        if (isTruthy(input$present_absent)) filter_by_selection <- expr(!(!!filter_by_selection))
+        filter_by_selection <- expr(class_list()$name %in% input$select_students)
+        if (isTruthy(input$tgl_present_absent %% 2)) filter_by_selection <- expr(!(!!filter_by_selection))
 
         class_list() |>
           select(name) |>
           filter(!!filter_by_selection)
+      })
+
+      output$n_present <- renderText({
+        req(input$select_students)
+        paste('Class size: ', nrow(available_for_pairing()))
       })
 
       output$present_students <- renderTable({ available_for_pairing() })
@@ -131,6 +132,7 @@ paring <- function(id, attendance) {
         clipr::write_clip(pairs_list(), allow_non_interactive = TRUE)
       }) |> bindEvent(input$btn_copy_pairs)
 
+
       pairs_list <- reactive({
         create_pairs(attendance(), group_size = input$group_size)[[1]]
 
@@ -141,6 +143,7 @@ paring <- function(id, attendance) {
         purrr::imap_chr(pairs_list(), ~format_pair_list(.x, .y)) |>
           paste0(collapse = '') |> htmltools::HTML()
       })
+
 
       dlCsv('save', pairs_list, 'pairs.csv')
     })
@@ -184,14 +187,9 @@ attendanceRecord <- function(id, current_tab) {
     })
 }
 
-
-
-
-
 attendanceDTUI <- function(id) {
   ns <- NS(id)
   tagList(
-
     sidebarLayout(
       sidebarPanel(
         fileInput(ns('attendance_file'),
@@ -233,22 +231,23 @@ attendanceDT <- function(id) {
         )
       })
 
-      output$n_present <- renderText({
-        req(selected_students())
-        paste('Present students (', length(selected_students()), ')')
-      })
-
       selected_students <- reactive({
         idx <- as.integer(input$dt_table_rows_selected)
 
         class_list()[idx, 'name']
       })
 
-      invertSelection('invert', 'dt_table', class_list, reactive(input$dt_table_rows_selected))
+      output$n_present <- renderText({
+        req(selected_students())
+        paste('Present students (', length(selected_students()), ')')
+      })
 
+      invertSelection('invert', 'dt_table', class_list, reactive(input$dt_table_rows_selected))
 
     })
 }
+
+
 
 dlCsvUI <- function(id, label = "Download CSV") {
   ns <- NS(id)
@@ -291,4 +290,3 @@ session$onFlushed(function() {
   })
 })
 }
-

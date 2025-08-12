@@ -28,12 +28,8 @@ ui <- fluidPage(
     tabPanel('Instructions',
 
     ),
-    tabPanel('Attendance (1)', value = 'att_a',
+    tabPanel('Attendance', value = 'att_a',
              selectAttendingStudentsUI('presence_tab')
-    ),
-
-    tabPanel('Attendance (2)', value = 'att_b',
-             attendanceDTUI('attendance_alt')
     ),
 
     tabPanel('Pair',
@@ -48,15 +44,6 @@ ui <- fluidPage(
 
 server <- function(input, output) {
 
-  present_students <- reactiveVal()
-
-  observe({
-     if (input$tabs == 'att_a') present_students(selectAttendingStudents('presence_tab'))
-     else if (input$tabs == 'att_b') present_students(attendanceDT('attendance_alt'))
-  })
-
-
-
   paring('pairing_tab', present_students())
   attendanceRecord('attendance_record_tab',
                          current_tab = reactive(input$tabs))
@@ -65,5 +52,3 @@ server <- function(input, output) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
-
-
