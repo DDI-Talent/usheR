@@ -18,4 +18,14 @@
 
 .shiny-output-error-validation {
   font-size: 3.2rem;
+  margin-top: 20px;
+  line-height: 60px;
+}
+
+.item[data-value="Everyone"] {
+ font-weight: bold;
+}
+.option[data-value="Everyone"] {
+  background-color: #ffeeba;
+  font-weight: bold;
 }

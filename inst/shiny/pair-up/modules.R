@@ -1,8 +1,7 @@
 library(usheR)
-library(shiny)
 library(dplyr)
+library(shiny)
 library(shinyjs)
-library(DT)
 library(clipr)
 
 create_pair_divs <- function(pairs, gr_num) {
@@ -21,7 +20,7 @@ instructions <- function(id) {
   ns <- NS(id)
   NULL
   # includeMarkdown('www/instructions.Rmd')
-  includeHTML('www/instructions.html')
+  # includeHTML('www/instructions.html')
   # source('www/_tmp_ui-q-instr.R')$value
 }
 
@@ -54,7 +53,7 @@ selectAttendingStudents <- function(id) {
 
       class_list <- reactive({
         d <- read.csv('large_class_list.csv')
-        # d <- read.csv(input$attendance_file$datapath)
+        d <- read.csv(input$attendance_file$datapath)
         names(d) <- tolower(names(d))
         d[order(d[[1]]), , drop = FALSE]
       })
@@ -66,13 +65,13 @@ selectAttendingStudents <- function(id) {
       }) |> bindEvent(input$tgl_present_absent)
 
       output$make_student_selection <- renderUI({
-        req(#input$attendance_file,
+        req(input$attendance_file,
             hasName(class_list(), 'name'))
         tagList(
           actionButton(ns('tgl_present_absent'), 'Add students'),
           saveUI(ns('save_attendance'), 'Save attendance'),
           selectizeInput(ns('select_students'), 'Present',
-                         class_list()$name, multiple = TRUE)
+                         c('Everyone', class_list()$name), multiple = TRUE)
         )
       })
 
@@ -81,13 +80,14 @@ selectAttendingStudents <- function(id) {
       available_for_pairing <- reactive({
 
 
-        filter_by_selection <- expr(class_list()$name %in% input$select_students)
+        filter_by_selection <- if ('Everyone' %in% input$select_students) TRUE
+                               else expr(class_list()$name %in% input$select_students)
         if (isTruthy(input$tgl_present_absent %% 2)) filter_by_selection <- expr(!(!!filter_by_selection))
 
         class_list() |>
           select(name) |>
           filter(!!filter_by_selection)
-      })
+      }) # output would probably be better as a vector
 
       output$n_present <- renderText({
         req(length(input$select_students) > 0)
@@ -97,14 +97,27 @@ selectAttendingStudents <- function(id) {
       output$present_students <- renderTable({
         data_is_valid <- tryCatch(hasName(class_list(), 'name'), error = \(e) F)
         validate(
-          # need(input$attendance_file, 'Upload class list to select students'),
+          need(input$attendance_file, 'Upload class list to select students'),
           need(data_is_valid, 'Ensure class list has a `name` column')
         )
 
         available_for_pairing()
       })
 
-        saveServer('save_attendance', available_for_pairing, 'attendance.csv', reactive(input$select_students))
+      attendance_list <- reactive({
+        ## TODO: tidy this up a bit to make clearer
+        ### esp. if available_for_pairing was a vector instead
+        take_attendance(class_list(),
+                        match(available_for_pairing()$name, class_list()$name),
+                        session_id = sprintf('week_%02i', ncol(class_list()))
+
+        )
+      })
+      saveServer('save_attendance',
+                 reactive(dplyr::left_join(class_list(), attendance_list(), by = "name")
+),
+                 input$attendance_file, reactive(input$select_students))
+
 
       reactive(available_for_pairing()$name)
 
@@ -119,7 +132,7 @@ paringUI <- function(id) {
         numericInput(ns('group_size'), 'Group Size', 2, min = 2),
         actionButton(ns('btn_pair'), 'Pair Up'),
         actionButton(ns('btn_copy_pairs'), HTML(paste(icon('clipboard'), 'Copy to clipboard', collapse = ''))),
-        saveUI(ns('save'), 'Save pairs')
+        saveUI(ns('save_pairs'), 'Save pairs')
       ),
       mainPanel(
           htmlOutput(ns('pairs'))
@@ -156,7 +169,7 @@ paring <- function(id, attendance) {
           paste0(collapse = '') |> htmltools::HTML()
       })
 
-      # saveServer('save_pairs', pairs_list, 'pairs.csv', reactive(TRUE))
+      # saveServer('save_pairs', pairs_list, 'pairs.csv', reactive(input$btn_pair))
     })
 }
 
@@ -184,7 +197,7 @@ reviewAttendance <- function(id, current_tab) {
         read.csv('large_class_list.csv') |>
           dplyr::mutate(attendance = as.integer(rowSums(across(where(is.logical)))),
                         dplyr::across(where(is.logical), ~ ifelse(., 'X', '')))
-      }, striped = TRUE, align = 'r', )
+      }, striped = TRUE, align = 'r')
 
       shinyjs::hide('attendance_history')
       observe({
@@ -215,21 +228,53 @@ saveUI <- function(id, label = "Download CSV") {
   )
 }
 
-saveServer <- function(id, data_reactive, filename = "data.csv", show_save_button) {
+
+
+
+save_output <- function(dataframe,
+                        file_path) {
+
+  # if (!is.null(file_path)) {
+  #   if (file.exists(file_path)) {
+  #     existing <- readr::read_csv(file_path, show_col_types = FALSE)
+  #     dataframe <- dplyr::full_join(dataframe, existing, by = "name")
+  #   }
+
+    tryCatch({
+      existing <- readr::read_csv(file_path, show_col_types = FALSE)
+      dataframe <- dplyr::full_join(dataframe, existing, by = "name")
+    },
+    error = \(e) dataframe
+    )
+
+
+    write.csv(dataframe, file_path, row.names = FALSE)
+
+  dataframe
+  }
+
+
+
+saveServer <- function(id, d,#r1, dr2,
+                       write_to, show_save_button) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+
     observe({
       if (isTruthy(show_save_button())) shinyjs::show("save-btn-container")
-      else  shinyjs::hide("save-btn-container")
+      else shinyjs::hide("save-btn-container")
     })
+
+
 
     output$download <- downloadHandler(
       filename = function() {
-        filename
+        file_input <- reactive(write_to)
+        file_input()$name
       },
       content = function(file) {
-        write.csv(data_reactive(), file, row.names = FALSE)
+        write.csv(d(), file, row.names = FALSE)
       }
     )
   })
