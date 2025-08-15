@@ -1,10 +1,6 @@
 Package: usheR
 Title: Some helper functions for teaching
-<<<<<<< HEAD
 Version: 0.7.0
-=======
-Version: 0.4.2
->>>>>>> f0c6074 (Improve admissions reviewing functionality)
 Authors@R: c(
     person("John", "Wilson", , "43386915+jmcvw@users.noreply.github.com", role = c("aut", "cre")),
     person("Nicola", "Burns", , "Nburns2@ed.ac.uk", role = c("aut"))
