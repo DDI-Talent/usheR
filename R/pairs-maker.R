@@ -159,7 +159,6 @@ print.pairings <- function(x, n = 1, ...) {
 #' Optionally, the tibble can be saved as a CSV file if `file_path` is specified.
 #'
 #' @param pairings A pairings list object returned by `create_pairs()`.
-#' @param file_path Optional. A character string specifying a file path to save the output tibble as a CSV file. IF `NULL` (default), no file is saved.
 #'
 #' @returns A tibble with the columns : `week` (Integer), `group` (Character), and `pairing` (Character).
 #'
@@ -178,27 +177,9 @@ print.pairings <- function(x, n = 1, ...) {
 #' data_frame <- convert_to_df(pairings, file_path = "Pairs.csv")
 #' }
 #'
-convert_to_df <- function(pairings,
-                          file_path = NULL) {
+convert_to_df <- function(pairs_list) {
 
-  data_frame <- dplyr::bind_rows(pairings)
-
-  # Add week labels in reverse so Week 1 is first row group
-  data_frame$week <- rev(seq_len(nrow(data_frame)))
-
-  df_pivot <- tidyr::pivot_longer(
-    data = data_frame,
-    cols = -week,
-    names_to = "group",
-    values_to = "pairing"
-    )
-
-  if(!is.null(file_path)) {
-    write.csv(df_pivot, file_path, row.names = FALSE)
-  }
-
-  return(df_pivot)
-
+  purrr::map_df(pairs_list, dplyr::tibble, .id = 'week')
 }
 
 
@@ -224,29 +205,8 @@ convert_to_df <- function(pairings,
 #' # Convert back to list format
 #' roster_list <- convert_to_list(data_frame)
 #'
-convert_to_list <- function(data_frame) {
-
-  df_wide <- tidyr::pivot_wider(
-    data = data_frame,
-    names_from = group,
-    values_from = pairing
-  )
-
-  # Drop the 'week' column as not used in `create_pairs()` list
-  df_wide$week <- NULL
-
-  # re-convert each row into a named character vector
-  pairings_list <- lapply(seq_len(nrow(df_wide)), function(i) {
-    row <- as.character(df_wide[i, ])
-    names(row) <- names(df_wide)
-    row
-  })
-
-  # re-assign class
-  class(pairings_list) <- c("pairings", "list")
-
-  return(pairings_list)
-
+convert_to_list <- function(pairs_df) {
+  structure(split(pairs_df$name, pairs_df$week), class = c('pairings', 'list'))
 }
 
 
@@ -331,17 +291,19 @@ student_pairs <- function(attendance,
                             record = pair_history,
                             population = population)
 
-  data_frame <- convert_to_df(new_pairs)
 
+  pairs_df <- convert_to_df(new_pairs)
   # In some weeks, there may be fewer students than expected, resulting in underfilled groups.
   # This creates NA entries in the pairing column for groups that couldn't be formed (e.g., group 5 or 6 in a week with only enough students for 4 groups).
   # These rows are removed here to ensure only valid pairings are included.
-  data_frame <- data_frame[!is.na(data_frame$pairing), ]
+  # -- Not sure when this actually happens? --
+  # -- Will handle here with a warning till I know otherwise for sure --
+  if (anyNA(pairs_df$pairing)) {
+    warning('NAs found in pairing colums. Removed in `student_pairs`\n')
+    pairs_df[!is.na(pairs_df$pairing), ]
+  }
+  if (!is.null(file_path)) save_output(pairs_df, file_path)
 
-  # Save if file_path is provided
-  save_output(data_frame, file_path)
-
-  return(data_frame)
-
+  pairs_df
 }
 
