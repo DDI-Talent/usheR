@@ -24,22 +24,62 @@ instructions <- function(id) {
   # source('www/_tmp_ui-q-instr.R')$value
 }
 
+
+uploadClassDataUI <- function(id) {
+  ns <- NS(id)
+  tagList(
+    fileInput(ns('class_history_file'),
+              'Choose Attendance File',
+              accept =  '.csv'
+    )
+  )
+}
+
+uploadClassData <- function(id) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      ns <- session$ns
+      reactive({
+        req(input$class_history_file)
+
+        d <- read.csv(input$class_history_file$datapath)
+        names(d) <- tolower(names(d))
+
+        d <- if (hasName(d, 'week')) {
+          setNames(split(d, d$week == 0), c('pairs_df', 'class_list'))
+        } else {
+          list(pairs_df = NULL, class_list = cbind('week' = 0, d))
+        }
+
+        d$class_list <- d$class_list[order(d$class_list$name), , drop = FALSE]
+        d
+      })
+
+    })
+}
+
+
+
+
+
 selectAttendingStudentsUI <- function(id) {
   ns <- NS(id)
   tagList(
 
     sidebarLayout(
-      sidebarPanel(width = 4,
-        fileInput(ns('attendance_file'),
-                  'Choose Attendance File',
-                  accept =  '.csv'
-        ),
-        uiOutput(ns('make_student_selection'))
+      sidebarPanel( width = 4,
+                    uploadClassDataUI(ns('upload_class_data')),
+                    uiOutput(ns('make_student_selection'))
       ),
 
       mainPanel(
-        textOutput(ns('n_present')),
-        tableOutput(ns('present_students'))
+        column(width = 3, style = 'margin-top:20px; font-size: 1.2em;',
+               htmlOutput(ns('n_present'))
+        ),
+        column(width = 8,
+               tableOutput(ns('present_students'))
+        )
       )
     )
   )
@@ -51,102 +91,111 @@ selectAttendingStudents <- function(id) {
     function(input, output, session) {
       ns <- session$ns
 
-      class_list <- reactive({
-        d <- read.csv('large_class_list.csv')
-        d <- read.csv(input$attendance_file$datapath)
-        names(d) <- tolower(names(d))
-        d[order(d[[1]]), , drop = FALSE]
-      })
-
-
+      class_data <- uploadClassData('upload_class_data')
       observe({
-        updateActionButton(inputId = 'tgl_present_absent',
-                           label = c('Add students', 'Remove students')[input$tgl_present_absent %% 2 + 1])
+        click_count <- input$tgl_present_absent %% 2 + 1
+        class_in_ex <- c('INcluded', 'EXcluded')
+        btn_lab <- sprintf('Students selected below will be <span class=%s>%s</span>',
+                           class_in_ex[click_count], class_in_ex[click_count])
+
+        shinyjs::runjs(sprintf('
+            var selectize_el = document.getElementsByClassName("selectize-input")[0];
+              selectize_el.classList.remove("%s");
+              selectize_el.classList.add("%s");
+            ', class_in_ex[3 - click_count], class_in_ex[click_count]))
+
+
+        updateActionButton(inputId = 'tgl_present_absent', label = btn_lab)
       }) |> bindEvent(input$tgl_present_absent)
 
       output$make_student_selection <- renderUI({
-        req(input$attendance_file,
-            hasName(class_list(), 'name'))
+        # req(
+        #   input$class_history_file,
+        #   length(class_data() == 2),
+        #   hasName(class_data()$class_list, 'name')
+        # )
+
         tagList(
-          actionButton(ns('tgl_present_absent'), 'Add students'),
-          saveUI(ns('save_attendance'), 'Save attendance'),
-          selectizeInput(ns('select_students'), 'Present',
-                         c('Everyone', class_list()$name), multiple = TRUE)
+          actionButton(ns('tgl_present_absent'), HTML('Students selected below will be <span class=INcluded>INcluded</span>')
+          ),
+          # saveClassDataUI(ns('save_class_data')),
+          selectizeInput(ns('select_students'), 'Choose students',
+                         c('Everyone', class_data()$class_list$name), multiple = TRUE)
         )
       })
-
-
 
       available_for_pairing <- reactive({
 
+        filter_by_selection <- if ('everyone' %in% tolower(input$select_students)) TRUE
+        else expr(class_data()$class_list$name %in% input$select_students)
 
-        filter_by_selection <- if ('Everyone' %in% input$select_students) TRUE
-                               else expr(class_list()$name %in% input$select_students)
         if (isTruthy(input$tgl_present_absent %% 2)) filter_by_selection <- expr(!(!!filter_by_selection))
 
-        class_list() |>
+        class_data()$class_list |>
           select(name) |>
           filter(!!filter_by_selection)
-      }) # output would probably be better as a vector
+      })
 
       output$n_present <- renderText({
         req(length(input$select_students) > 0)
-        paste('Class size: ', nrow(available_for_pairing()))
+        HTML(paste(p('You should have:'), div(style = 'width: 100%; text-align: center;', p(span(style='text-align: center; font-size: 1.2em; color: #2297E6;>', nrow(available_for_pairing()))), p('students in the class?'))))
       })
 
       output$present_students <- renderTable({
-        data_is_valid <- tryCatch(hasName(class_list(), 'name'), error = \(e) F)
-        validate(
-          need(input$attendance_file, 'Upload class list to select students'),
-          need(data_is_valid, 'Ensure class list has a `name` column')
-        )
+        data_is_valid <- tryCatch(hasName(class_data()$class_list, 'name') &&
+                                    !grep('~~', class_data()$class_list), error = \(e) FALSE)
+        # req(input$class_history_file)
+        # validate(
+        #   need(isTruthy(class_data()$class_list), 'Upload class list to select students'),
+        #   need(length(class_data()) == 2, 'Upload class list to select studentsdi'),
+        #   need(data_is_valid, 'Ensure class list has a `name` column')
+        # )
 
+        # class_data()$class_list
         available_for_pairing()
       })
 
-      attendance_list <- reactive({
-        ## TODO: tidy this up a bit to make clearer
-        ### esp. if available_for_pairing was a vector instead
-        take_attendance(class_list(),
-                        match(available_for_pairing()$name, class_list()$name),
-                        session_id = sprintf('week_%02i', ncol(class_list()))
-
-        )
-      })
-      saveServer('save_attendance',
-                 reactive(dplyr::left_join(class_list(), attendance_list(), by = "name")
-),
-                 input$attendance_file, reactive(input$select_students))
-
-
+      #       attendance_list <- reactive({
+      #         ## todo: tidy this up a bit to make clearer
+      #         ### esp. if available_for_pairing was a vector instead
+      #         take_attendance(class_list(),
+      #                         match(available_for_pairing()$name, class_list()$name),
+      #                         session_id = sprintf('week_%02i', ncol(class_list()))
+      #
+      #         )
+      #       })
+      saveClassData('save_class_data',
+                    reactive(dplyr::bind_rows(class_list())),
+                    input$attendance_file, reactive(input$select_students))
+      #
+      #
       reactive(available_for_pairing()$name)
 
     })
 }
 
-paringUI <- function(id) {
+pairingUI <- function(id) {
   ns <- NS(id)
   tagList(
     sidebarLayout(
       sidebarPanel(
         numericInput(ns('group_size'), 'Group Size', 2, min = 2),
         actionButton(ns('btn_pair'), 'Pair Up'),
-        actionButton(ns('btn_copy_pairs'), HTML(paste(icon('clipboard'), 'Copy to clipboard', collapse = ''))),
-        saveUI(ns('save_pairs'), 'Save pairs')
+        # actionButton(ns('btn_copy_pairs'), HTML(paste(icon('clipboard'), 'Copy to clipboard', collapse = ''))),
+        # saveClassDataUI(ns('save_pairs'), 'Save pairs')
       ),
       mainPanel(
-          htmlOutput(ns('pairs'))
+        htmlOutput(ns('pairs'))
       )
     )
   )
 }
 
-paring <- function(id, attendance) {
+pairing <- function(id, attendance) {
   moduleServer(
     id,
     function(input, output, session) {
       shinyjs::disable('btn_copy_pairs')
-
       observe({
         req(input$btn_pair, pairs_list())
         shinyjs::enable('btn_copy_pairs')
@@ -169,7 +218,7 @@ paring <- function(id, attendance) {
           paste0(collapse = '') |> htmltools::HTML()
       })
 
-      # saveServer('save_pairs', pairs_list, 'pairs.csv', reactive(input$btn_pair))
+      # saveClassData('save_pairs', pairs_list, 'pairs.csv', reactive(input$btn_pair))
     })
 }
 
@@ -218,12 +267,12 @@ reviewAttendance <- function(id, current_tab) {
 
 
 
-saveUI <- function(id, label = "Download CSV") {
+saveClassDataUI <- function(id, label = "Save to CSV") {
   ns <- NS(id)
   tagList(
     shinyjs::hidden(
-      span(downloadButton(ns("download"), label),
-          id = ns('save-btn-container'), container = 'inline')
+      span(downloadButton(ns("download"), label, ),
+           id = ns('save-btn-container'), container = 'inline')
     )
   )
 }
@@ -240,23 +289,23 @@ save_output <- function(dataframe,
   #     dataframe <- dplyr::full_join(dataframe, existing, by = "name")
   #   }
 
-    tryCatch({
-      existing <- readr::read_csv(file_path, show_col_types = FALSE)
-      dataframe <- dplyr::full_join(dataframe, existing, by = "name")
-    },
-    error = \(e) dataframe
-    )
+  tryCatch({
+    existing <- readr::read_csv(file_path, show_col_types = FALSE)
+    dataframe <- dplyr::full_join(dataframe, existing, by = "name")
+  },
+  error = \(e) dataframe
+  )
 
 
-    write.csv(dataframe, file_path, row.names = FALSE)
+  write.csv(dataframe, file_path, row.names = FALSE)
 
   dataframe
-  }
+}
 
 
 
-saveServer <- function(id, d,#r1, dr2,
-                       write_to, show_save_button) {
+saveClassData <- function(id, d,
+                          write_to, show_save_button) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 

@@ -1,3 +1,4 @@
+body { background-color: #444}
 .pair-group-container {
   border: 1px solid #ccc;
   padding: 10px;
@@ -9,7 +10,7 @@
 .pair-group {
   font-weight: bold;
   font-size: 1.5em;
-  color: #0000ff;
+  color: #9B59B6;
 }
 
 .individuals {
@@ -29,3 +30,18 @@
   background-color: #ffeeba;
   font-weight: bold;
 }
+
+a.btn.shiny-download-link { background-color: #2ECC71;}
+
+.INcluded {
+    font-weight: bold;
+    color: #E67E22;
+}
+.EXcluded {
+    font-weight: bold;
+    color: #9B59B6;
+}
+.selectize-input { background-color: #E67E2288; }
+.selectize-input.INcluded { background-color: #E67E2288; }
+.selectize-input.EXcluded { background-color: #9B59B688; }
+
