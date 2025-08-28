@@ -113,7 +113,7 @@ create_pairs <- function(pool, group_size = 2,
 
     this_gen <- fitness_function(pairs, record)
 
-    if (how_many_dups <= winning_dups) {
+    if (this_gen$dup_count <= winning_dups) {
       winning_dups  <- this_gen$dup_count
       winning_pairs <- this_gen$pairs
     }
@@ -139,7 +139,6 @@ print.pairings <- function(x, n = 1, ...) {
   n <- seq_len(n)
   mapply(\(group, week) {
     cat('\n\033[32mWeek', week, '\033[0m')
-
 
     lapply(seq_along(group), \(i) {
       cat('\n  \033[34m~ Group', i, '\033[0m\n    - ')
@@ -178,8 +177,9 @@ print.pairings <- function(x, n = 1, ...) {
 #' }
 #'
 convert_to_df <- function(pairs_list) {
+  purrr::map_df(rev(pairs_list), ~dplyr::tibble(name = .x), .id = 'week') |>
+    dplyr::mutate(week = as.integer(week))
 
-  purrr::map_df(pairs_list, dplyr::tibble, .id = 'week')
 }
 
 
@@ -266,15 +266,10 @@ convert_to_list <- function(pairs_df) {
 student_pairs <- function(attendance,
                           group_size = 2,
                           population = 1000,
-                          file_path = NULL,
-                          seed = NULL){
-
-  if (!is.null(seed)) {
-    set.seed(seed)
-  }
+                          pair_history = NULL,
+                          file_path = NULL){
 
   # Load pair history automatically from file_path (if exists)
-  pair_history <- NULL
   if (!is.null(file_path) && file.exists(file_path)) {
     pair_history_df <- readr::read_csv(file_path, show_col_types = FALSE)
     pair_history <- convert_to_list(pair_history_df)

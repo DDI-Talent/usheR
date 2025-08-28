@@ -1,4 +1,3 @@
-body { background-color: #444}
 .pair-group-container {
   border: 1px solid #ccc;
   padding: 10px;
@@ -14,6 +13,10 @@ body { background-color: #444}
 }
 
 .individuals {
+  font-size: 2rem;
+}
+
+.shiny-output-error {
   font-size: 2rem;
 }
 
@@ -45,3 +48,42 @@ a.btn.shiny-download-link { background-color: #2ECC71;}
 .selectize-input.INcluded { background-color: #E67E2288; }
 .selectize-input.EXcluded { background-color: #9B59B688; }
 
+.tab-pane[data-value="ToDo"],
+.tab-pane[data-value="Instructions"] {
+  font-size: 2.5rem;
+}
+
+.tab-pane[data-value="Instructions"] h2,
+.tab-pane[data-value="Instructions"] h3,
+.tab-pane[data-value="ToDo"] h3,
+.tab-pane[data-value="ToDo"] h2 {
+  color: #6a0051;
+}
+
+.tab-pane[data-value="ToDo"] h2,
+.tab-pane[data-value="Instructions"] h2 {
+  font-weight: bold;
+}
+
+.jwTab table {font-size: 1.6rem; font-family: Arial; border-collapse: collapse; border-bottom: 3px solid #6a0051;}
+.jwTab caption {text-align: left;}
+.jwTab th {color: white; background-color: #6a0051; height: 60px; text-align: left; padding-left: 8px;}
+.jwTab th:nth-child(1) {background-color: white;}
+.jwTab th:nth-child(2) {text-align: center;}
+.jwTab td {padding: 8px 8px; vertical-align: top; text-align: left;}
+.jwTab td:nth-child(2) {text-align: center;}
+.jwTab td:nth-child(1) {
+  color: #6a0051; font-weight: 600;
+  background-color: white;
+  border: none;
+}
+.jwTab tr:nth-child(2n) {background-color: #e7d6e3;}
+.jwTab .row_outer {border-top: 3px solid #6a0051;}
+.jwTab .row_inner {border-top: 1px solid #e7d6e3; border-bottom: 1px solid #e7d6e3;}
+.jwTab .row_highlight {background-color: #e7d6e3;}
+
+hr {
+  border: 2px solid #6a0051;
+}
+
+.content { margin: 0 150px; }

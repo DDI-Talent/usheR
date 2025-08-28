@@ -1,0 +1,13 @@
+name: pair-up
+title: pair-up
+username: ddi-talent
+account: ddi-talent
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15186044
+bundleId: 10830045
+url: https://ddi-talent.shinyapps.io/pair-up/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: data/attendance-short-week-1.csv|data/attendance-short-week-2.csv|data/attendance.csv|data/example-pair-data-for-instructions.csv
