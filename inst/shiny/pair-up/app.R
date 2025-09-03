@@ -4,7 +4,7 @@ library(shiny)
 library(shinyjs)
 source('helpers.R')
 source('modules.R')
-version <- '0.1.0'
+version <- '0.1.1'
 
 ui <- fluidPage(
   shinyjs::useShinyjs(),
@@ -14,12 +14,10 @@ ui <- fluidPage(
       span(paste0('v', version), style = 'color: #E67E22')
     ))
   ),
-  # includeCSS('www/style.css'),
   tags$head(tags$link(
-    rel = "stylesheet",
-    type = "text/css",
-    href = "style.css"
+    rel = "stylesheet", type = "text/css", href = "style.css"
   )),
+
   tabsetPanel(
     id = 'tabs',
     selected = 'take_att',
@@ -32,8 +30,6 @@ ui <- fluidPage(
       selectAttendingStudentsUI('presence_tab')
     ),
     tabPanel('Pair', pairPresentStudentsUI('pairing_tab')),
-    # tabPanel('Review Attendance',
-    #          reviewAttendanceUI('attendance_record_tab')
   )
 )
 
