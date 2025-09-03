@@ -35,38 +35,35 @@ uploadClassDataUI <- function(id) {
 }
 
 uploadClassData <- function(id) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      ns <- session$ns
-      reactive({
-        req(input$class_history_file)
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+    reactive({
+      req(input$class_history_file)
 
-        d <- read.csv(input$class_history_file$datapath)
-        names(d) <- tolower(trimws(names(d)))
+      d <- read.csv(input$class_history_file$datapath)
+      names(d) <- tolower(trimws(names(d)))
 
-        d <- d[names(d) %in% c('week', 'name')]
+      d <- d[names(d) %in% c('week', 'name')]
 
-        d <- if (!hasName(d, 'week')) {
-          list(pairs_df = NULL, class_list = cbind('week' = 0, d))
-        } else {
-          list(pairs_df = d[d$week != 0, ], class_list = d[d$week == 0, ])
-        }
+      d <- if (!hasName(d, 'week')) {
+        list(pairs_df = NULL, class_list = cbind('week' = 0, d))
+      } else {
+        list(pairs_df = d[d$week != 0, ], class_list = d[d$week == 0, ])
+      }
 
-        if (hasName(d, 'name')) {
-          # stop('[Unhandled error] The selected file has no `name` column')
-          # d <- data.frame(week = 0)
-          d$class_list <- d$class_list[order(d$class_list$name), , drop = FALSE]
-        }
+      if (hasName(d, 'name')) {
+        # stop('[Unhandled error] The selected file has no `name` column')
+        # d <- data.frame(week = 0)
+        d$class_list <- d$class_list[order(d$class_list$name), , drop = FALSE]
+      }
 
-        list(
-          class_list = d$class_list,
-          pair_history = d$pairs_df,
-          file_meta = input$class_history_file
-        )
-      })
-    }
-  )
+      list(
+        class_list = d$class_list,
+        pair_history = d$pairs_df,
+        file_meta = input$class_history_file
+      )
+    })
+  })
 }
 
 
@@ -93,169 +90,152 @@ selectAttendingStudentsUI <- function(id) {
 }
 
 selectAttendingStudents <- function(id) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      ns <- session$ns
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
-      class_data_and_metadata <- uploadClassData('upload_class_data')
-      class_list <- reactive({
-        class_data_and_metadata()$class_list
-      })
-      pair_history <- reactive({
-        class_data_and_metadata()$pair_history
-      })
-      file_info <- reactive({
-        class_data_and_metadata()$file_meta
-      })
+    class_data_and_metadata <- uploadClassData('upload_class_data')
+    class_list <- reactive({
+      class_data_and_metadata()$class_list
+    })
+    pair_history <- reactive({
+      class_data_and_metadata()$pair_history
+    })
+    file_info <- reactive({
+      class_data_and_metadata()$file_meta
+    })
 
-      observe({
-        click_count <- input$tgl_present_absent %% 2 + 1
-        class_in_ex <- c('INcluded', 'EXcluded')
-        btn_lab <- sprintf(
-          'Students selected below will be <span class=%s>%s</span>',
-          class_in_ex[click_count],
-          class_in_ex[click_count]
-        )
+    observe({
+      click_count <- input$tgl_present_absent %% 2 + 1
+      class_in_ex <- c('INcluded', 'EXcluded')
+      btn_lab <- sprintf(
+        'Students selected below will be <span class=%s>%s</span>',
+        class_in_ex[click_count],
+        class_in_ex[click_count]
+      )
 
-        shinyjs::runjs(sprintf(
-          '
+      shinyjs::runjs(sprintf(
+        '
             var selectize_el = document.getElementsByClassName("selectize-input")[0];
               selectize_el.classList.remove("%s");
               selectize_el.classList.add("%s");
             ',
-          class_in_ex[3 - click_count],
-          class_in_ex[click_count]
-        ))
+        class_in_ex[3 - click_count],
+        class_in_ex[click_count]
+      ))
 
-        updateActionButton(inputId = 'tgl_present_absent', label = btn_lab)
-      }) |>
-        bindEvent(input$tgl_present_absent)
+      updateActionButton(inputId = 'tgl_present_absent', label = btn_lab)
+    }) |>
+      bindEvent(input$tgl_present_absent)
 
-      output$make_student_selection <- renderUI({
-        req(
-          file_info(),
-          hasName(class_list(), 'name'),
-          nrow(class_list()) > 0,
-          !any(grepl('~~', class_list()$name))
-        )
+    output$make_student_selection <- renderUI({
+      req(
+        file_info(),
+        hasName(class_list(), 'name'),
+        nrow(class_list()) > 0,
+        !any(grepl('~~', class_list()$name))
+      )
 
-        output$n_present <- renderText({
-          req(
-            hasName(class_list(), 'name'),
-            nrow(class_list()) > 0,
-            !any(grepl('~~', class_list()$name)),
-            length(input$select_students) > 0
-          )
-          HTML(paste(
-            p('You should have:'),
-            div(
-              style = 'width: 100%; text-align: center;',
-              p(span(
-                style = 'text-align: center; font-size: 1.2em; color: #2297E6;>',
-                nrow(available_for_pairing())
-              )),
-              p('students in the class?')
-            )
-          ))
-        })
-
-        tagList(
-          actionButton(
-            ns('tgl_present_absent'),
-            HTML(
-              'Students selected below will be <span class=INcluded>INcluded</span>'
-            )
-          ),
-          # saveClassDataUI(ns('save_class_data')),
-          selectizeInput(
-            ns('select_students'),
-            'Choose students',
-            c('Everyone', class_list()$name),
-            selected = 'Everyone',
-            multiple = TRUE
-          )
-        )
-      })
-
-      available_for_pairing <- reactive({
+      output$n_present <- renderText({
         req(
           hasName(class_list(), 'name'),
           nrow(class_list()) > 0,
           !any(grepl('~~', class_list()$name)),
           length(input$select_students) > 0
         )
-
-        filter_by_selection <- if (
-          'everyone' %in% tolower(input$select_students)
-        ) {
-          TRUE
-        } else {
-          expr(class_list()$name %in% input$select_students)
-        }
-
-        if (isTruthy(input$tgl_present_absent %% 2)) {
-          filter_by_selection <- expr(!(!!filter_by_selection))
-        }
-
-        class_list() |>
-          select(name) |>
-          filter(!!filter_by_selection)
+        HTML(paste(
+          p('You should have:'),
+          div(
+            style = 'width: 100%; text-align: center;',
+            p(span(
+              style = 'text-align: center; font-size: 1.2em; color: #2297E6;>',
+              nrow(available_for_pairing())
+            )),
+            p('students in the class?')
+          )
+        ))
       })
 
-      output$present_students <- renderTable({
-        data_is_valid <- forceReactiveEval({
-          stopifnot('Select a `class data` file.' = try(isTruthy(file_info())))
-          stopifnot(
-            'Data must have `name` column.' = try(hasName(class_list(), 'name'))
+      tagList(
+        actionButton(
+          ns('tgl_present_absent'),
+          HTML(
+            'Students selected below will be <span class=INcluded>INcluded</span>'
           )
-          stopifnot(
-            'Data must have a `week 0` containing individual student names.\nSee `Instructions tab` for required format.' = try(
-              nrow(class_list()) > 0
-            )
-          )
-          stopifnot(
-            'All weeks other that 0 must contain only paired names.' = try(all(grepl(
-              '~~',
-              pair_history()$name
-            )))
-          )
-          stopifnot(
-            'Your data contain only pre-paired names.' = try(
-              !any(grepl('~~', class_list()$name))
-            )
-          )
-        })
-
-        validate(
-          need(data_is_valid$truthy, data_is_valid$message)
+        ),
+        # saveClassDataUI(ns('save_class_data')),
+        selectizeInput(
+          ns('select_students'),
+          'Choose students',
+          c('Everyone', class_list()$name),
+          selected = 'Everyone',
+          multiple = TRUE
         )
+      )
+    })
 
-        available_for_pairing()
+    available_for_pairing <- reactive({
+      req(
+        hasName(class_list(), 'name'),
+        nrow(class_list()) > 0,
+        !any(grepl('~~', class_list()$name)),
+        length(input$select_students) > 0
+      )
+
+      filter_student_selection(input, class_list)
+    })
+
+    output$present_students <- renderTable({
+      data_is_valid <- forceReactiveEval({
+        stopifnot('Select a `class data` file.' = try(isTruthy(file_info())))
+        stopifnot(
+          'Data must have `name` column.' = try(hasName(class_list(), 'name'))
+        )
+        stopifnot(
+          'Data must have a `week 0` containing individual student names.\nSee `Instructions tab` for required format.' = try(
+            nrow(class_list()) > 0
+          )
+        )
+        stopifnot(
+          'All weeks other that 0 must contain only paired names.' = try(all(grepl(
+            '~~',
+            pair_history()$name
+          )))
+        )
+        stopifnot(
+          'Your data contain only pre-paired names.' = try(
+            !any(grepl('~~', class_list()$name))
+          )
+        )
       })
 
-      combined_data <- reactive(
-        dplyr::bind_rows(
-          class_list(),
-          pair_history()
-        )
+      validate(
+        need(data_is_valid$truthy, data_is_valid$message)
       )
 
-      saveClassData(
-        'save_class_data',
-        combined_data,
-        file_info,
-        reactive(input$select_students)
-      )
+      available_for_pairing()
+    })
 
-      reactive(
-        list(
-          available = available_for_pairing(),
-          class_data = class_data_and_metadata()
-        )
+    combined_data <- reactive(
+      dplyr::bind_rows(
+        class_list(),
+        pair_history()
       )
-    }
-  )
+    )
+
+    saveClassData(
+      'save_class_data',
+      combined_data,
+      file_info,
+      reactive(input$select_students)
+    )
+
+    reactive(
+      list(
+        available = available_for_pairing(),
+        class_data = class_data_and_metadata()
+      )
+    )
+  })
 }
 
 pairPresentStudentsUI <- function(id) {
@@ -279,82 +259,79 @@ pairPresentStudentsUI <- function(id) {
 }
 
 pairPresentStudents <- function(id, attendance) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      observe({
-        has_students <- tryCatch(
-          {
-            length(attendance()$available$name) > 0
-          },
-          error = function(e) FALSE
-        )
+  moduleServer(id, function(input, output, session) {
+    observe({
+      has_students <- tryCatch(
+        {
+          length(attendance()$available$name) > 0
+        },
+        error = function(e) FALSE
+      )
 
-        if (has_students) {
-          shinyjs::enable('btn_pair')
-          shinyjs::enable('group_size')
-        } else {
-          shinyjs::disable('btn_pair')
-          shinyjs::disable('group_size')
-        }
-      })
-      shinyjs::disable('btn_copy_pairs')
-      observe({
-        req(input$btn_pair, pairs_list())
-        shinyjs::enable('btn_copy_pairs')
-      })
+      if (has_students) {
+        shinyjs::enable('btn_pair')
+        shinyjs::enable('group_size')
+      } else {
+        shinyjs::disable('btn_pair')
+        shinyjs::disable('group_size')
+      }
+    })
+    shinyjs::disable('btn_copy_pairs')
+    observe({
+      req(input$btn_pair, pairs_list())
+      shinyjs::enable('btn_copy_pairs')
+    })
 
-      observe({
-        req(F)
-        clipr::write_clip(pairs_list(), allow_non_interactive = TRUE)
-      }) |>
-        bindEvent(input$btn_copy_pairs)
+    observe({
+      req(F)
+      clipr::write_clip(pairs_list(), allow_non_interactive = TRUE)
+    }) |>
+      bindEvent(input$btn_copy_pairs)
 
-      pairs_list <- reactive({
-        l <- attendance()$class_data$pair_history
-        if (!is.null(l)) {
-          l <- convert_to_list(l)
-        }
+    pairs_list <- reactive({
+      l <- attendance()$class_data$pair_history
+      if (!is.null(l)) {
+        l <- convert_to_list(l)
+      }
 
-        create_pairs(
-          attendance()$available$name,
-          group_size = input$group_size,
-          record = l
-        )
-      }) |>
-        bindEvent(input$btn_pair)
+      create_pairs(
+        attendance()$available$name,
+        group_size = input$group_size,
+        record = l
+      )
+    }) |>
+      bindEvent(input$btn_pair)
 
-      output$new_pairs <- renderText({
-        purrr::imap_chr(pairs_list()[[1]], create_pair_divs) |>
-          paste0(collapse = '') |>
-          htmltools::HTML()
-      })
+    output$new_pairs <- renderText({
+      purrr::imap_chr(pairs_list()[[1]], create_pair_divs) |>
+        paste0(collapse = '') |>
+        htmltools::HTML()
+    })
 
-      observe({
-        input$btn_pair
-      }) |>
-        bindEvent(input$btn_pair)
+    observe({
+      input$btn_pair
+    }) |>
+      bindEvent(input$btn_pair)
 
-      combined_data <- reactive({
-        bind_rows(
-          attendance()$class_data$class_list,
-          convert_to_df(pairs_list()) |> mutate(week = as.integer(week)),
-        )
-      })
-      file_info <- reactive({
-        attendance()$class_data$file_meta
-      })
+    combined_data <- reactive({
+      bind_rows(
+        attendance()$class_data$class_list,
+        convert_to_df(pairs_list()) |> mutate(week = as.integer(week)),
+      )
+    })
+    file_info <- reactive({
+      attendance()$class_data$file_meta
+    })
 
-      observe({
-        saveClassData(
-          'save_pairs',
-          combined_data,
-          file_info,
-          reactive(input$btn_pair)
-        )
-      })
-    }
-  )
+    observe({
+      saveClassData(
+        'save_pairs',
+        combined_data,
+        file_info,
+        reactive(input$btn_pair)
+      )
+    })
+  })
 }
 
 reviewAttendanceUI <- function(id) {
@@ -372,33 +349,30 @@ reviewAttendanceUI <- function(id) {
 }
 
 reviewAttendance <- function(id, current_tab) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      # current_tab = reactive(input$tabs)
-      output$attendance_history <- renderTable(
-        {
-          read.csv('large_class_list.csv') |>
-            dplyr::mutate(
-              attendance = as.integer(rowSums(across(where(is.logical)))),
-              dplyr::across(where(is.logical), ~ ifelse(., 'X', ''))
-            )
-        },
-        striped = TRUE,
-        align = 'r'
-      )
+  moduleServer(id, function(input, output, session) {
+    # current_tab = reactive(input$tabs)
+    output$attendance_history <- renderTable(
+      {
+        read.csv('large_class_list.csv') |>
+          dplyr::mutate(
+            attendance = as.integer(rowSums(across(where(is.logical)))),
+            dplyr::across(where(is.logical), ~ ifelse(., 'X', ''))
+          )
+      },
+      striped = TRUE,
+      align = 'r'
+    )
 
+    shinyjs::hide('attendance_history')
+    observe({
+      shinyjs::toggle('attendance_history')
+    }) |>
+      bindEvent(input$togl_attendance)
+    observe({
       shinyjs::hide('attendance_history')
-      observe({
-        shinyjs::toggle('attendance_history')
-      }) |>
-        bindEvent(input$togl_attendance)
-      observe({
-        shinyjs::hide('attendance_history')
-      }) |>
-        bindEvent(current_tab())
-    }
-  )
+    }) |>
+      bindEvent(current_tab())
+  })
 }
 
 
