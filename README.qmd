@@ -16,9 +16,8 @@ format: gfm
 
 ## Instructions for Package Users: Pair Maker
 
-(for instructions see the Vignette once you install the package)
-
 ## Instructions for Package Users: Easier Github Pull-Update Instructions:
+
 ### Introduction - Simplified Classnotes Updater (no-drama github pull-and-merge):
 
 This part of the package allows students to 'update/pull' the most recent notes from the teacher's public course git repository without using git commands in terminal or RStudio. This is especially useful on the beginner courses, and in the first weeks where you want to start using R code quickly, prior to teaching students about git.
