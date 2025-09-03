@@ -4,8 +4,6 @@ library(shiny)
 library(shinyjs)
 source('helpers.R')
 source('modules.R')
-# needed until merged
-source('_tmp-helpers.R')
 version <- '0.1.0'
 
 ui <- fluidPage(

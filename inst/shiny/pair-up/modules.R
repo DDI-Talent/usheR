@@ -121,12 +121,9 @@ selectAttendingStudents <- function(id) {
           )
         ),
         # saveClassDataUI(ns('save_class_data')),
-        selectizeInput(
-          ns('select_students'),
-          'Choose students',
+        selectizeInput( ns('select_students'), 'Choose students',
           c('Everyone', class_list()$name),
-          selected = 'Everyone',
-          multiple = TRUE
+          selected = 'Everyone', multiple = TRUE
         )
       )
     })
@@ -143,26 +140,18 @@ selectAttendingStudents <- function(id) {
           'Data must have `name` column.' = try(hasName(class_list(), 'name'))
         )
         stopifnot(
-          'Data must have a `week 0` containing individual student names.\nSee `Instructions tab` for required format.' = try(
-            nrow(class_list()) > 0
-          )
+          'Data must have a `week 0` containing individual student names.\nSee `Instructions tab` for required format.' = try( nrow(class_list()) > 0)
         )
         stopifnot(
-          'All weeks other that 0 must contain only paired names.' = try(all(grepl(
-            '~~',
-            pair_history()$name
-          )))
+          'All weeks other that 0 must contain only paired names.' = try(all(grepl( '~~', pair_history()$name)))
         )
         stopifnot(
-          'Your data contain only pre-paired names.' = try(
-            !any(grepl('~~', class_list()$name))
+          'Your data contain only pre-paired names.' = try( !any(grepl('~~', class_list()$name))
           )
         )
       })
 
-      validate(
-        need(data_is_valid$truthy, data_is_valid$message)
-      )
+      validate( need(data_is_valid$truthy, data_is_valid$message) )
 
       available_for_pairing()
     })
@@ -197,10 +186,10 @@ pairPresentStudentsUI <- function(id) {
       sidebarPanel(
         numericInput(ns('group_size'), 'Group Size', 2, min = 2),
         actionButton(ns('btn_pair'), 'Pair Up'),
-        actionButton(
-          ns('btn_copy_pairs'),
-          HTML(paste(icon('clipboard'), 'Copy to clipboard', collapse = ''))
-        ),
+        # actionButton(
+        #   ns('btn_copy_pairs'),
+        #   HTML(paste(icon('clipboard'), 'Copy to clipboard', collapse = ''))
+        # ),
         saveClassDataUI(ns('save_pairs'), 'Save pairs')
       ),
       mainPanel(
@@ -212,22 +201,7 @@ pairPresentStudentsUI <- function(id) {
 
 pairPresentStudents <- function(id, attendance) {
   moduleServer(id, function(input, output, session) {
-    observe({
-      has_students <- tryCatch(
-        {
-          length(attendance()$available$name) > 0
-        },
-        error = function(e) FALSE
-      )
-
-      if (has_students) {
-        shinyjs::enable('btn_pair')
-        shinyjs::enable('group_size')
-      } else {
-        shinyjs::disable('btn_pair')
-        shinyjs::disable('group_size')
-      }
-    })
+    observe({ tgl_pair_btn_visibility(attendance) })
 
     shinyjs::disable('btn_copy_pairs')
     observe({
@@ -243,9 +217,7 @@ pairPresentStudents <- function(id, attendance) {
 
     pairs_list <- reactive({
       l <- attendance()$class_data$pair_history
-      if (!is.null(l)) {
-        l <- convert_to_list(l)
-      }
+      if (!is.null(l)) l <- convert_to_list(l)
 
       create_pairs(
         attendance()$available$name,
@@ -261,9 +233,7 @@ pairPresentStudents <- function(id, attendance) {
         htmltools::HTML()
     })
 
-    observe({
-      input$btn_pair
-    }) |>
+    observe( input$btn_pair ) |>
       bindEvent(input$btn_pair)
 
     combined_data <- reactive({
@@ -272,9 +242,8 @@ pairPresentStudents <- function(id, attendance) {
         convert_to_df(pairs_list()) |> mutate(week = as.integer(week)),
       )
     })
-    file_info <- reactive({
-      attendance()$class_data$file_meta
-    })
+
+    file_info <- reactive({ attendance()$class_data$file_meta })
 
     observe({
       saveClassData(
