@@ -53,7 +53,7 @@ filter_student_selection <- function(input, class_list) {
 
 
 tgl_select_btn_visibility <- function(input, input_id = 'tgl_present_absent') {
-  click_count <- input$input_id %% 2 + 1
+  click_count <- input[[input_id]] %% 2 + 1
   class_in_ex <- c('INcluded', 'EXcluded')
   btn_lab <- sprintf(
     'Students selected below will be <span class=%s>%s</span>',
@@ -71,7 +71,7 @@ tgl_select_btn_visibility <- function(input, input_id = 'tgl_present_absent') {
     class_in_ex[click_count]
   ))
 
-  updateActionButton(inputId = tgl_present_absent, label = btn_lab)
+  updateActionButton(inputId = input_id, label = btn_lab)
 }
 
 

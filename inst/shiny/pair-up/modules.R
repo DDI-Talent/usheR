@@ -15,10 +15,7 @@ prep_for_copy <- function(d) {
     strsplit('~~') |>
     unname() |>
     purrr::imap_chr(
-      ~ sprintf(
-        'Group %02i\n%s\n',
-        .y,
-        paste0('  - ', .x, collapse = '\n')
+      ~ sprintf('Group %02i\n%s\n', .y, paste0('  - ', .x, collapse = '\n')
       )
     )
 }
@@ -26,10 +23,8 @@ prep_for_copy <- function(d) {
 uploadClassDataUI <- function(id) {
   ns <- NS(id)
   tagList(
-    fileInput(
-      ns('class_history_file'),
-      'Choose Attendance File',
-      accept = '.csv'
+    fileInput(ns('class_history_file'), 'Choose Attendance File',
+              accept = '.csv'
     )
   )
 }
@@ -94,54 +89,17 @@ selectAttendingStudents <- function(id) {
     ns <- session$ns
 
     class_data_and_metadata <- uploadClassData('upload_class_data')
-    class_list <- reactive({
-      class_data_and_metadata()$class_list
-    })
-    pair_history <- reactive({
-      class_data_and_metadata()$pair_history
-    })
-    file_info <- reactive({
-      class_data_and_metadata()$file_meta
-    })
+    class_list   <- reactive({ class_data_and_metadata()$class_list })
+    pair_history <- reactive({ class_data_and_metadata()$pair_history })
+    file_info    <- reactive({ class_data_and_metadata()$file_meta })
 
-    observe({
-      click_count <- input$tgl_present_absent %% 2 + 1
-      class_in_ex <- c('INcluded', 'EXcluded')
-      btn_lab <- sprintf(
-        'Students selected below will be <span class=%s>%s</span>',
-        class_in_ex[click_count],
-        class_in_ex[click_count]
-      )
-
-      shinyjs::runjs(sprintf(
-        '
-            var selectize_el = document.getElementsByClassName("selectize-input")[0];
-              selectize_el.classList.remove("%s");
-              selectize_el.classList.add("%s");
-            ',
-        class_in_ex[3 - click_count],
-        class_in_ex[click_count]
-      ))
-
-      updateActionButton(inputId = 'tgl_present_absent', label = btn_lab)
-    }) |>
+    observe({ tgl_select_btn_visibility(input, 'tgl_present_absent') }) |>
       bindEvent(input$tgl_present_absent)
 
     output$make_student_selection <- renderUI({
-      req(
-        file_info(),
-        hasName(class_list(), 'name'),
-        nrow(class_list()) > 0,
-        !any(grepl('~~', class_list()$name))
-      )
+      validate_class_data(file_info, class_list)
 
       output$n_present <- renderText({
-        req(
-          hasName(class_list(), 'name'),
-          nrow(class_list()) > 0,
-          !any(grepl('~~', class_list()$name)),
-          length(input$select_students) > 0
-        )
         HTML(paste(
           p('You should have:'),
           div(
@@ -174,13 +132,7 @@ selectAttendingStudents <- function(id) {
     })
 
     available_for_pairing <- reactive({
-      req(
-        hasName(class_list(), 'name'),
-        nrow(class_list()) > 0,
-        !any(grepl('~~', class_list()$name)),
-        length(input$select_students) > 0
-      )
-
+      validate_class_data(file_info, class_list)
       filter_student_selection(input, class_list)
     })
 
@@ -276,6 +228,7 @@ pairPresentStudents <- function(id, attendance) {
         shinyjs::disable('group_size')
       }
     })
+
     shinyjs::disable('btn_copy_pairs')
     observe({
       req(input$btn_pair, pairs_list())
