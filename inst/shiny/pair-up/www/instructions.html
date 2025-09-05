@@ -1,26 +1,11 @@
-<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
 <main class="content" id="quarto-document-content">
-
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Instructions</h1>
 </div>
-
-
-
 <div class="quarto-title-meta">
-
-
-
-
   </div>
-
-
-
 </header>
-
-
 <!-- ::: panel-tabset -->
 <section id="upload-class-list" class="level2">
 <h2 class="anchored" data-anchor-id="upload-class-list">Upload class list</h2>
@@ -45,9 +30,7 @@
 </ul></li>
 <li><p>Once you are happy with your selection, move onto the <code>Pair</code> tab.</p></li>
 </ol>
-
 <hr>
-
 </section>
 <section id="creating-pair-groups" class="level2">
 <h2 class="anchored" data-anchor-id="creating-pair-groups">Creating pair groups</h2>
@@ -58,23 +41,32 @@
 <li>Press the save button to write to csv - you can save to a nw file if you like.</li>
 <li>Repeat, overwriting the same file as in the last step - the record of previous pairs should accumulate. <!-- ::: --></li>
 </ol>
-</section>
-
 <hr>
-
+</section>
 <section id="expected-data-format" class="level2">
 <h2 class="anchored" data-anchor-id="expected-data-format">Expected data format</h2>
 <p>For a <strong>brand new class</strong>, a CSV containing only a <code>name</code> column is all that is necessary.<br>
 The <code>name</code> column should contain the names of every student taking the class.</p>
 <p>Once students have been paired, they are recorded in subsequent weeks. When saving the data, the original class list should be overwritten, and used in all following weeks. The data can be saved in a OneDrive folder that is shared with all staff involved in delivering any live sessions.</p>
+<style>
+  .jwTab table {font-size: 1.6rem; font-family: Arial; border-collapse: collapse; border-bottom: 3px solid #6a0051;}
+  .jwTab caption {text-align: left;}
+  .jwTab th {color: white; background-color: #6a0051; height: 60px; text-align: left; padding-left: 8px;}
+  .jwTab td {padding: 8px 8px; vertical-align: top;}
+  .jwTab .row_outer {border-top: 3px solid #6a0051;}
+  .jwTab .row_inner {border-top: 1px solid #e7d6e3; border-bottom: 1px solid #e7d6e3;}
+  .jwTab .row_highlight {background-color: #e7d6e3;}
+  NA {NA}
+</style>
 <div class="jwTab">
 <col_group>
 </col_group><p></p><table>
 <caption>
 </caption>
-<colgroup><col width="32%">
-<col width="32%">
-<col width="32%">
+<colgroup><col width="24%">
+<col width="24%">
+<col width="24%">
+<col width="24%">
 </colgroup>
 <!-- Table header -->
 <thead>
@@ -83,6 +75,9 @@ The <code>name</code> column should contain the names of every student taking th
 </th>
 <th>
 week
+</th>
+<th>
+session
 </th>
 <th>
 name
@@ -100,6 +95,9 @@ Week 0 lists all unique student names
 0
 </td>
 <td>
+NA
+</td>
+<td>
 Aaronson, L. H.
 </td>
 </tr>
@@ -109,6 +107,9 @@ Aaronson, L. H.
 </td>
 <td>
 0
+</td>
+<td>
+NA
 </td>
 <td>
 Berdon, R. I.
@@ -122,6 +123,9 @@ Berdon, R. I.
 0
 </td>
 <td>
+NA
+</td>
+<td>
 Callahan, R. J.
 </td>
 </tr>
@@ -131,6 +135,9 @@ Callahan, R. J.
 </td>
 <td>
 0
+</td>
+<td>
+NA
 </td>
 <td>
 Daly, J. J.
@@ -144,6 +151,9 @@ Daly, J. J.
 0
 </td>
 <td>
+NA
+</td>
+<td>
 Grillo, A. E.
 </td>
 </tr>
@@ -153,6 +163,9 @@ Grillo, A. E.
 </td>
 <td>
 0
+</td>
+<td>
+NA
 </td>
 <td>
 Hadden, W. L. Jr,
@@ -167,6 +180,9 @@ Week 1 lists all student paired in week 1
 1
 </td>
 <td>
+first
+</td>
+<td>
 Aaronson, L. H.~~Daly, J. J.
 </td>
 </tr>
@@ -176,6 +192,9 @@ Aaronson, L. H.~~Daly, J. J.
 </td>
 <td>
 1
+</td>
+<td>
+second
 </td>
 <td>
 Berdon, R. I.~~Callahan, R. J.
@@ -190,6 +209,9 @@ Week 2 lists all student paired in week 2
 2
 </td>
 <td>
+first
+</td>
+<td>
 Callahan, R. J.~~Hadden, W. L. Jr,
 </td>
 </tr>
@@ -199,6 +221,9 @@ Callahan, R. J.~~Hadden, W. L. Jr,
 </td>
 <td>
 2
+</td>
+<td>
+second
 </td>
 <td>
 Daly, J. J.~~Grillo, A. E.
@@ -220,6 +245,32 @@ Daly, J. J.~~Grillo, A. E.
 <!--   .jwTab .row_inner {border-top: 1px solid #e7d6e3; border-bottom: 1px solid #e7d6e3;} -->
 <!--   .jwTab .row_highlight {background-color: #e7d6e3;} -->
 <!-- </style> -->
+<hr>
+<section id="error-messages" class="level2">
+<h2 class="anchored" data-anchor-id="error-messages">Error messages</h2>
+<section id="error-1-missing-name-column" class="level3">
+<h3 class="anchored" data-anchor-id="error-1-missing-name-column"><strong>Error 1:</strong> Missing <code>name</code> column</h3>
+<p>Your uploaded file must contain a column named <code>name</code> that lists all student names. This column should contain:</p>
+<ul>
+<li>Individual student names for Week 0 (baseline class list)</li>
+<li>Optionally, it may <strong>also</strong> contain paired names for subsequent weeks (format: <code>name1~~name2</code>)</li>
+</ul>
 </section>
-</main>
-</div>
+<section id="error-2-missing-week-0-data" class="level3">
+<h3 class="anchored" data-anchor-id="error-2-missing-week-0-data"><strong>Error 2:</strong> Missing Week 0 data</h3>
+<p>Week 0 serves as your baseline class roster and must contain individual student names only. This data is used to:</p>
+<ul>
+<li>Establish the complete list of students in your class</li>
+<li>Generate new pairings for students who haven’t been paired yet</li>
+</ul>
+</section>
+<section id="error-3-individual-names-in-pairing-weeks" class="level3">
+<h3 class="anchored" data-anchor-id="error-3-individual-names-in-pairing-weeks"><strong>Error 3:</strong> Individual names in pairing weeks</h3>
+<p>Weeks 1 and above should only contain paired student names using the format <code>name1~~name2</code>. Each row should represent one complete pair. Individual names in these weeks indicate incomplete pairing data.</p>
+</section>
+<section id="error-4-paired-names-in-week-0" class="level3">
+<h3 class="anchored" data-anchor-id="error-4-paired-names-in-week-0"><strong>Error 4:</strong> Paired names in Week 0</h3>
+<p>Week 0 must contain individual student names only - no paired names allowed. Use the <code>name1~~name2</code> format only for weeks 1 and above where actual pairings occurred. This format is used to avoid the many characters that can appear in names across many languages.</p>
+</section>
+</section>
+</section></main>

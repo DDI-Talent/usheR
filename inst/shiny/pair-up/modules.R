@@ -1,24 +1,3 @@
-create_pair_divs <- function(pairs, gr_num) {
-  pairs <- strsplit(pairs, '~~')[[1]]
-
-  g <- htmltools::p(class = 'pair-group', paste('Group', gr_num))
-  ul <- htmltools::tags$ul(class = 'individuals', lapply(pairs, tags$li))
-
-  paste(
-    htmltools::tags$div(class = 'pair-group-container', g, '\n', ul)
-  ) |>
-    htmltools::HTML()
-}
-
-prep_for_copy <- function(d) {
-  d[d$week != 0, 'name'] |>
-    strsplit('~~') |>
-    unname() |>
-    purrr::imap_chr(
-      ~ sprintf('Group %02i\n%s\n', .y, paste0('  - ', .x, collapse = '\n'))
-    )
-}
-
 uploadClassDataUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -39,18 +18,22 @@ uploadClassData <- function(id) {
       d <- read.csv(input$class_history_file$datapath)
       names(d) <- tolower(trimws(names(d)))
 
-      d <- d[names(d) %in% c('week', 'name')]
+      validate(need(
+        hasName(d, 'name'),
+        'Ensure there is a column specifically named `name`'
+      ))
 
-      d <- if (!hasName(d, 'week')) {
-        list(pairs_df = NULL, class_list = cbind('week' = 0, d))
+      required_cols <- c('week', 'session', 'name')
+      d <- d[names(d) %in% required_cols]
+
+      if (!hasName(d, 'week')) d$week <- 0
+      if (!hasName(d, 'session')) d$session <- NA
+      d <- d[required_cols]
+
+      d <- if (all(d$week == 0)) {
+        list(pairs_df = NULL, class_list = d)
       } else {
         list(pairs_df = d[d$week != 0, ], class_list = d[d$week == 0, ])
-      }
-
-      if (hasName(d, 'name')) {
-        # stop('[Unhandled error] The selected file has no `name` column')
-        # d <- data.frame(week = 0)
-        d$class_list <- d$class_list[order(d$class_list$name), , drop = FALSE]
       }
 
       list(
@@ -74,9 +57,7 @@ selectAttendingStudentsUI <- function(id) {
       ),
 
       mainPanel(
-        column(
-          width = 3,
-          style = 'margin-top:20px; font-size: 1.2em;',
+        column(width = 3, style = 'margin-top:20px; font-size: 1.2em;',
           htmlOutput(ns('n_present'))
         ),
         column(width = 8, tableOutput(ns('present_students')))
@@ -90,19 +71,11 @@ selectAttendingStudents <- function(id) {
     ns <- session$ns
 
     class_data_and_metadata <- uploadClassData('upload_class_data')
-    class_list <- reactive({
-      class_data_and_metadata()$class_list
-    })
-    pair_history <- reactive({
-      class_data_and_metadata()$pair_history
-    })
-    file_info <- reactive({
-      class_data_and_metadata()$file_meta
-    })
+    class_list <- reactive({ class_data_and_metadata()$class_list })
+    pair_history <- reactive({ class_data_and_metadata()$pair_history })
+    file_info <- reactive({ class_data_and_metadata()$file_meta })
 
-    observe({
-      tgl_select_btn_visibility(input, 'tgl_present_absent')
-    }) |>
+    observe({ tgl_select_btn_visibility(input, 'tgl_present_absent') }) |>
       bindEvent(input$tgl_present_absent)
 
     output$make_student_selection <- renderUI({
@@ -129,12 +102,9 @@ selectAttendingStudents <- function(id) {
             'Students selected below will be <span class=INcluded>INcluded</span>'
           )
         ),
-        selectizeInput(
-          ns('select_students'),
-          'Choose students',
-          c('Everyone', class_list()$name),
-          selected = 'Everyone',
-          multiple = TRUE
+        selectizeInput( ns('select_students'), 'Choose students',
+          choices = c('Everyone', class_list()$name),
+          selected = 'Everyone', multiple = TRUE
         )
       )
     })
@@ -146,26 +116,11 @@ selectAttendingStudents <- function(id) {
 
     output$present_students <- renderTable({
       data_is_valid <- forceReactiveEval({
-        stopifnot('Select a `class data` file.' = try(isTruthy(file_info())))
-        stopifnot(
-          'Data must have `name` column.' = try(hasName(class_list(), 'name'))
-        )
-        stopifnot(
-          'Data must have a `week 0` containing individual student names.\nSee `Instructions tab` for required format.' = try(
-            nrow(class_list()) > 0
-          )
-        )
-        stopifnot(
-          'All weeks other that 0 must contain only paired names.' = try(all(grepl(
-            '~~',
-            pair_history()$name
-          )))
-        )
-        stopifnot(
-          'Your data contain only pre-paired names.' = try(
-            !any(grepl('~~', class_list()$name))
-          )
-        )
+        stopifnot('Select a `class data` file, a file with a list of student names.' = try(isTruthy(file_info())))
+        stopifnot('Your class list must have a `name` column containing your students\' names.\n[See error 1 in instructions]' = try(hasName(class_list(), 'name')))
+        stopifnot('Missing `week 0` information with individual student names.\n[See error 2 in instructions]' = try(nrow(class_list()) > 0) )
+        stopifnot('Weeks 1+ must contain only paired names - no individual names.\n[See error 3 in instructions]' = try(all(grepl('~~', pair_history()$name))))
+        stopifnot('Week 0 cannot contain paired names. Use individual names only.\n[See error 4 in instructions]' = try(!any(grepl('~~', class_list()$name))))
       })
 
       validate(need(data_is_valid$truthy, data_is_valid$message))
@@ -182,8 +137,7 @@ selectAttendingStudents <- function(id) {
 
     saveClassData(
       'save_class_data',
-      combined_data,
-      file_info,
+      combined_data, file_info,
       reactive(input$select_students)
     )
 
@@ -201,8 +155,15 @@ pairPresentStudentsUI <- function(id) {
   tagList(
     sidebarLayout(
       sidebarPanel(
-        numericInput(ns('group_size'), 'Group Size', 2, min = 2),
-        actionButton(ns('btn_pair'), 'Pair Up'),
+        div(
+          class = 'pair-controls',
+          actionButton(ns('btn_pair'), 'Pair Up',
+            class = 'pair-button', container = 'inline'
+          ),
+          numericInput(ns('group_size'), 'Group Size',
+            value = 2, min = 2, width = '50%'
+          )
+        ),
         copyToClipboardUI(ns('btn_copy_pairs')),
         saveClassDataUI(ns('save_pairs'), 'Save pairs')
       ),
@@ -215,9 +176,7 @@ pairPresentStudentsUI <- function(id) {
 
 pairPresentStudents <- function(id, attendance) {
   moduleServer(id, function(input, output, session) {
-    observe({
-      tgl_pair_btn_visibility(attendance)
-    })
+    observe({ tgl_pair_btn_visibility(attendance) })
 
     shinyjs::disable('btn_copy_pairs')
     observe({
@@ -225,17 +184,10 @@ pairPresentStudents <- function(id, attendance) {
       shinyjs::enable('btn_copy_pairs')
     })
 
-    observe({
-      req(F)
-      clipr::write_clip(pairs_list(), allow_non_interactive = TRUE)
-    }) |>
-      bindEvent(input$btn_copy_pairs)
-
     pairs_list <- reactive({
       l <- attendance()$class_data$pair_history
-      if (!is.null(l)) {
-        l <- convert_to_list(l)
-      }
+
+      if (!is.null(l)) l <- convert_to_list(l)
 
       create_pairs(
         attendance()$available$name,
@@ -257,22 +209,18 @@ pairPresentStudents <- function(id, attendance) {
     combined_data <- reactive({
       bind_rows(
         attendance()$class_data$class_list,
-        convert_to_df(pairs_list()) |> mutate(week = as.integer(week)),
+        convert_to_df(pairs_list()) |>
+          mutate(week = as.integer(week)),
       )
     })
 
-    file_info <- reactive({
-      attendance()$class_data$file_meta
-    })
+    file_info <- reactive({ attendance()$class_data$file_meta })
 
     observe({
       copyToClipboard('btn_copy_pairs', combined_data, reactive(input$btn_pair))
 
-      saveClassData(
-        'save_pairs',
-        combined_data,
-        file_info,
-        reactive(input$btn_pair)
+      saveClassData('save_pairs', combined_data,
+        file_info, reactive(input$btn_pair)
       )
     })
   })
@@ -283,7 +231,7 @@ reviewAttendanceUI <- function(id) {
   tagList(
     sidebarLayout(
       sidebarPanel(
-        actionButton(ns('togl_attendance'), 'Show / Hide Attendance'),
+        actionButton(ns('tgl_attendance'), 'Show / Hide Attendance'),
       ),
       mainPanel(
         tableOutput(ns('attendance_history'))
@@ -295,8 +243,7 @@ reviewAttendanceUI <- function(id) {
 reviewAttendance <- function(id, current_tab) {
   moduleServer(id, function(input, output, session) {
     # current_tab = reactive(input$tabs)
-    output$attendance_history <- renderTable(
-      {
+    output$attendance_history <- renderTable({
         read.csv('large_class_list.csv') |>
           dplyr::mutate(
             attendance = as.integer(rowSums(across(where(is.logical)))),
@@ -308,26 +255,22 @@ reviewAttendance <- function(id, current_tab) {
     )
 
     shinyjs::hide('attendance_history')
-    observe({
-      shinyjs::toggle('attendance_history')
-    }) |>
-      bindEvent(input$togl_attendance)
-    observe({
-      shinyjs::hide('attendance_history')
-    }) |>
+    observe({ shinyjs::toggle('attendance_history') }) |>
+      bindEvent(input$tgl_attendance)
+
+    observe({ shinyjs::hide('attendance_history') }) |>
       bindEvent(current_tab())
   })
 }
 
 
-saveClassDataUI <- function(id, label = "Save to CSV") {
+saveClassDataUI <- function(id, label = 'Save to CSV') {
   ns <- NS(id)
   tagList(
     shinyjs::hidden(
       span(
-        downloadButton(ns("download"), label),
         id = ns('save-btn-container'),
-        container = 'inline'
+        downloadButton(ns('download'), label)
       )
     )
   )
@@ -340,9 +283,9 @@ saveClassData <- function(id, d, write_to, reveal_button) {
 
     observe({
       if (isTruthy(reveal_button())) {
-        shinyjs::show("save-btn-container")
+        shinyjs::show('save-btn-container')
       } else {
-        shinyjs::hide("save-btn-container")
+        shinyjs::hide('save-btn-container')
       }
     })
 
@@ -360,10 +303,9 @@ saveClassData <- function(id, d, write_to, reveal_button) {
 
 copyToClipboardUI <- function(id) {
   ns <- NS(id)
-  div(
-    id = ns("clipboard_container"),
-    style = "display: none;",
-    actionButton(ns("copy_btn"), "Copy to Clipboard", class = "btn-info")
+  span(
+    id = ns('clipboard_container'),
+    actionButton(ns('copy_btn'), 'Copy to Clipboard', class = 'btn-info')
   )
 }
 
@@ -371,16 +313,23 @@ copyToClipboard <- function(id, data_reactive, reveal_button) {
   moduleServer(id, function(input, output, session) {
     observe({
       if (reveal_button()) {
-        shinyjs::show("clipboard_container")
+        shinyjs::show('clipboard_container')
       } else {
-        shinyjs::hide("clipboard_container")
+        shinyjs::hide('clipboard_container')
       }
     })
 
-    observeEvent(input$copy_btn, {
+    observe({
       data_reactive() |>
         prep_for_copy() |>
         clipr::write_clip(allow_non_interactive = TRUE)
-    })
+
+      showNotification(
+        'Groups copied to clipboard!',
+        type = 'message',
+        duration = 2
+      )
+    }) |>
+      bindEvent(input$copy_btn)
   })
 }

@@ -1,15 +1,33 @@
+.pair-controls {
+  display: flex;
+  margin-bottom: 20px;
+  gap: 30px;
+}
+
 .pair-group-container {
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
   background-color: #f9f9f9;
-    width: 60%;
+  width: 60%;
 }
 
 .pair-group {
   font-weight: bold;
-  font-size: 1.5em;
+  font-size: 1.2em;
   color: #9B59B6;
+}
+
+.pair-button.disabled { background-color: #9B59B688;}
+.pair-button {
+  background-color: #ffeeba;
+}
+.pair-button:focus {
+  background-color: #ffeeba;
+}
+
+.pair-button:hover {
+  background-color: #E67E22;
 }
 
 .individuals {

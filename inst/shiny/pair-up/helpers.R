@@ -15,18 +15,12 @@ prep_for_copy <- function(d) {
     strsplit('~~') |>
     unname() |>
     purrr::imap_chr(
-      ~ sprintf(
-        'Group %02i\n%s\n',
-        .y,
-        paste0('  - ', .x, collapse = '\n')
-      )
+      ~ sprintf('Group %02i\n%s\n', .y, paste0('  - ', .x, collapse = '\n'))
     )
 }
 
-
 forceReactiveEval <- function(expr) {
-  tryCatch(
-    {
+  tryCatch({
       force(expr)
       list(truthy = TRUE)
     },
@@ -73,12 +67,11 @@ tgl_select_btn_visibility <- function(input, input_id = 'tgl_present_absent') {
     class_in_ex[click_count]
   )
 
-  shinyjs::runjs(sprintf(
-    '
-            var selectize_el = document.getElementsByClassName("selectize-input")[0];
-              selectize_el.classList.remove("%s");
-              selectize_el.classList.add("%s");
-            ',
+  shinyjs::runjs(sprintf('
+    var selectize_el = document.getElementsByClassName("selectize-input")[0];
+    selectize_el.classList.remove("%s");
+    selectize_el.classList.add("%s");
+    ',
     class_in_ex[3 - click_count],
     class_in_ex[click_count]
   ))
@@ -88,8 +81,7 @@ tgl_select_btn_visibility <- function(input, input_id = 'tgl_present_absent') {
 
 
 tgl_pair_btn_visibility <- function(attendance_data) {
-  has_students <- tryCatch(
-    {
+  has_students <- tryCatch({
       length(attendance_data()$available$name) > 0
     },
     error = function(e) FALSE
