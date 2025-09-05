@@ -24,7 +24,19 @@ prep_for_copy <- function(d) {
 }
 
 
-validate_class_data <- function(file_info, class_list) {
+forceReactiveEval <- function(expr) {
+  tryCatch(
+    {
+      force(expr)
+      list(truthy = TRUE)
+    },
+    error = function(e) {
+      list(truthy = FALSE, message = conditionMessage(e))
+    }
+  )
+}
+
+validateClassData <- function(file_info, class_list) {
   req(
     file_info(),
     hasName(class_list(), 'name'),

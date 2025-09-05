@@ -3,8 +3,9 @@ library(dplyr)
 library(shiny)
 library(shinyjs)
 source('helpers.R')
+source('_tmp-helpers.R')
 source('modules.R')
-version <- '0.1.1'
+version <- '0.2.0'
 
 ui <- fluidPage(
   shinyjs::useShinyjs(),
@@ -15,7 +16,9 @@ ui <- fluidPage(
     ))
   ),
   tags$head(tags$link(
-    rel = "stylesheet", type = "text/css", href = "style.css"
+    rel = "stylesheet",
+    type = "text/css",
+    href = "style.css"
   )),
 
   tabsetPanel(
@@ -37,8 +40,6 @@ ui <- fluidPage(
 server <- function(input, output) {
   present_students <- selectAttendingStudents('presence_tab')
   pairPresentStudents('pairing_tab', present_students)
-  # reviewAttendance('attendance_record_tab',
-  #                  current_tab = reactive(input$tabs))
 }
 
 # Run the application

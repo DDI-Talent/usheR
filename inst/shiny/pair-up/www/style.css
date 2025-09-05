@@ -44,7 +44,8 @@ a.btn.shiny-download-link { background-color: #2ECC71;}
     font-weight: bold;
     color: #9B59B6;
 }
-.selectize-input { background-color: #E67E2288; }
+
+.selectize-control .selectize-input { background-color: #E67E2288; }
 .selectize-input.INcluded { background-color: #E67E2288; }
 .selectize-input.EXcluded { background-color: #9B59B688; }
 
