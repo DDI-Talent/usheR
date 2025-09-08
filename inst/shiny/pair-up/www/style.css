@@ -30,6 +30,12 @@
   background-color: #E67E22;
 }
 
+.btn-danger {
+  background-color: #9B59B688;
+  color: white;
+  border: none;
+}
+
 .individuals {
   font-size: 2rem;
 }
@@ -63,9 +69,8 @@ a.btn.shiny-download-link { background-color: #2ECC71;}
     color: #9B59B6;
 }
 
-.selectize-control .selectize-input { background-color: #E67E2288; }
-.selectize-input.INcluded { background-color: #E67E2288; }
-.selectize-input.EXcluded { background-color: #9B59B688; }
+.select-students-input .selectize-input { background-color: #E67E2288; }
+.select-students-input .selectize-input.EXcluded { background-color: #9B59B688; }
 
 .tab-pane[data-value="ToDo"],
 .tab-pane[data-value="Instructions"] {

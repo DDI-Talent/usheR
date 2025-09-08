@@ -2,23 +2,22 @@
 library(dplyr)
 library(shiny)
 library(shinyjs)
-source('helpers.R')
+source('global.R')
 source('_tmp-helpers.R')
 source('modules.R')
-version <- '0.2.0'
+
+tab_title <- 'Pair programmng pairing app '
+app_version <- '0.3.0'
+app_title <- HTML(paste0(
+  tab_title,
+  span(paste0('v', app_version), style = 'color: #E67E22')
+))
 
 ui <- fluidPage(
   shinyjs::useShinyjs(),
-  titlePanel(
-    HTML(paste0(
-      'Pair programmng pairing app ',
-      span(paste0('v', version), style = 'color: #E67E22')
-    ))
-  ),
-  tags$head(tags$link(
-    rel = "stylesheet",
-    type = "text/css",
-    href = "style.css"
+  title = tab_title,
+  titlePanel(app_title),
+  tags$head(tags$link( rel = "stylesheet", type = "text/css", href = "style.css"
   )),
 
   tabsetPanel(
@@ -32,12 +31,14 @@ ui <- fluidPage(
       value = 'take_att',
       selectAttendingStudentsUI('presence_tab')
     ),
-    tabPanel('Pair', pairPresentStudentsUI('pairing_tab')),
-  )
+    tabPanel('Pair', pairPresentStudentsUI('pairing_tab'))
+)
 )
 
 
 server <- function(input, output) {
+
+reactlog::reactlog_module_server()
   present_students <- selectAttendingStudents('presence_tab')
   pairPresentStudents('pairing_tab', present_students)
 }

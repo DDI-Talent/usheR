@@ -19,6 +19,29 @@ prep_for_copy <- function(d) {
     )
 }
 
+validate_class_data <- function(d) {
+  names(d) <- tolower(trimws(names(d)))
+  validate(need(
+    hasName(d, 'name'),
+    'Ensure there is a column specifically named `name`'
+  ))
+  
+  required_cols <- c('week', 'session', 'name')
+  d <- d[names(d) %in% required_cols]
+  if (!hasName(d, 'week')) d$week <- 0
+  if (!hasName(d, 'session')) d$session <- NA
+  
+  d[required_cols]
+}
+
+split_data_concerns <- function(d) {
+  if (all(d$week == 0)) {
+    list(pairs_df = NULL, class_list = d)
+  } else {
+    list(pairs_df = d[d$week != 0, ], class_list = d[d$week == 0, ])
+  }
+}
+
 forceReactiveEval <- function(expr) {
   tryCatch({
       force(expr)
@@ -68,7 +91,7 @@ tgl_select_btn_visibility <- function(input, input_id = 'tgl_present_absent') {
   )
 
   shinyjs::runjs(sprintf('
-    var selectize_el = document.getElementsByClassName("selectize-input")[0];
+    var selectize_el = document.getElementsByClassName("selectize-input")[1];
     selectize_el.classList.remove("%s");
     selectize_el.classList.add("%s");
     ',

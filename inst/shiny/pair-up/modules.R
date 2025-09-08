@@ -1,40 +1,24 @@
 uploadClassDataUI <- function(id) {
   ns <- NS(id)
   tagList(
+    actionLink(ns('btn_reset'), 'Reset file', class = 'btn-danger',
+               style = 'padding: 3px; border-radius: 4px; margin-bottom: 10px;'),
     fileInput(
-      ns('class_history_file'),
-      'Choose Attendance File',
-      accept = '.csv'
-    )
+      ns('class_history_file'), 'Choose Attendance File', accept = '.csv')
   )
 }
 
 uploadClassData <- function(id) {
   moduleServer(id, function(input, output, session) {
-    ns <- session$ns
+    observe({ shinyjs::runjs('history.go(0)') }) |> 
+      bindEvent(input$btn_reset)
+
     reactive({
       req(input$class_history_file)
 
-      d <- read.csv(input$class_history_file$datapath)
-      names(d) <- tolower(trimws(names(d)))
-
-      validate(need(
-        hasName(d, 'name'),
-        'Ensure there is a column specifically named `name`'
-      ))
-
-      required_cols <- c('week', 'session', 'name')
-      d <- d[names(d) %in% required_cols]
-
-      if (!hasName(d, 'week')) d$week <- 0
-      if (!hasName(d, 'session')) d$session <- NA
-      d <- d[required_cols]
-
-      d <- if (all(d$week == 0)) {
-        list(pairs_df = NULL, class_list = d)
-      } else {
-        list(pairs_df = d[d$week != 0, ], class_list = d[d$week == 0, ])
-      }
+      d <- read.csv(input$class_history_file$datapath) |> 
+        validate_class_data() |> 
+        split_data_concerns()
 
       list(
         class_list = d$class_list,
@@ -57,7 +41,7 @@ selectAttendingStudentsUI <- function(id) {
       ),
 
       mainPanel(
-        column(width = 3, style = 'margin-top:20px; font-size: 1.2em;',
+        column(width = 4, style = 'margin-top:20px; font-size: 1.2em;',
           htmlOutput(ns('n_present'))
         ),
         column(width = 8, tableOutput(ns('present_students')))
@@ -71,40 +55,57 @@ selectAttendingStudents <- function(id) {
     ns <- session$ns
 
     class_data_and_metadata <- uploadClassData('upload_class_data')
-    class_list <- reactive({ class_data_and_metadata()$class_list })
+    class_list   <- reactive({ class_data_and_metadata()$class_list })
     pair_history <- reactive({ class_data_and_metadata()$pair_history })
-    file_info <- reactive({ class_data_and_metadata()$file_meta })
+    file_info    <- reactive({ class_data_and_metadata()$file_meta })
 
     observe({ tgl_select_btn_visibility(input, 'tgl_present_absent') }) |>
       bindEvent(input$tgl_present_absent)
 
+    pp_session <- setPairProgSession('set_session', pair_history)
+
     output$make_student_selection <- renderUI({
+
       validateClassData(file_info, class_list)
 
+
       output$n_present <- renderText({
-        HTML(paste(
-          p('You should have:'),
-          div(
-            style = 'width: 100%; text-align: center;',
-            p(span(
-              style = 'text-align: center; font-size: 1.2em; color: #2297E6;>',
-              nrow(available_for_pairing())
-            )),
-            p('students in the class?')
-          )
-        ))
-      })
+        HTML(
+          paste(
+            div(
+              style = 'width: 100%; text-align: left; margin-bottom: 40px;',
+              p('You should have:'),
+              p(span(
+                style = 'margin-left: 50px; font-size: 1.2em; color: #2297E6;>',
+                nrow(available_for_pairing())
+              )),
+              p('students in the class?')
+            ),
+            div(
+              style = 'background-color: #9B59B688; padding: 2px 10px 0 10px; font-size: 1.2em; text-align: left;',
+              p('Remember to update the session name as appropriate!')
+            )
+        )
+      )
+    })
 
       tagList(
-        actionButton(
+        div(
+          style = 'margin-bottom: 50px;', # !! Doesn't actually work for some reason
+          setPairProgSessionUI(ns('set_session')),
+        ),
+        
+        actionButton(width = '100%',
           ns('tgl_present_absent'),
           HTML(
             'Students selected below will be <span class=INcluded>INcluded</span>'
           )
         ),
-        selectizeInput( ns('select_students'), 'Choose students',
-          choices = c('Everyone', class_list()$name),
-          selected = 'Everyone', multiple = TRUE
+        div(class = 'select-students-input',
+          selectizeInput( ns('select_students'), 'Choose students',
+            choices = c('Everyone', class_list()$name),
+            selected = 'Everyone', multiple = TRUE
+          ) 
         )
       )
     })
@@ -128,23 +129,12 @@ selectAttendingStudents <- function(id) {
       available_for_pairing()
     })
 
-    combined_data <- reactive(
-      dplyr::bind_rows(
-        class_list(),
-        pair_history()
-      )
-    )
-
-    saveClassData(
-      'save_class_data',
-      combined_data, file_info,
-      reactive(input$select_students)
-    )
 
     reactive(
       list(
         available = available_for_pairing(),
-        class_data = class_data_and_metadata()
+        class_data = class_data_and_metadata(),
+        pp_session = pp_session()
       )
     )
   })
@@ -207,10 +197,15 @@ pairPresentStudents <- function(id, attendance) {
       bindEvent(input$btn_pair)
 
     combined_data <- reactive({
+      # This should make use of NBs convert_to_df() function
+      most_recent_pairs <- convert_to_df(pairs_list()[[1]])
+      most_recent_pairs$week <- as.integer(attendance()$pp_session$week)
+      most_recent_pairs$session <- attendance()$ppsession$session
+
       bind_rows(
         attendance()$class_data$class_list,
-        convert_to_df(pairs_list()) |>
-          mutate(week = as.integer(week)),
+        attendance()$class_data$pair_history,
+        most_recent_pairs
       )
     })
 
@@ -219,7 +214,8 @@ pairPresentStudents <- function(id, attendance) {
     observe({
       copyToClipboard('btn_copy_pairs', combined_data, reactive(input$btn_pair))
 
-      saveClassData('save_pairs', combined_data,
+      saveClassData(
+        'save_pairs', combined_data,
         file_info, reactive(input$btn_pair)
       )
     })
@@ -279,8 +275,6 @@ saveClassDataUI <- function(id, label = 'Save to CSV') {
 
 saveClassData <- function(id, d, write_to, reveal_button) {
   moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-
     observe({
       if (isTruthy(reveal_button())) {
         shinyjs::show('save-btn-container')
@@ -331,5 +325,53 @@ copyToClipboard <- function(id, data_reactive, reveal_button) {
       )
     }) |>
       bindEvent(input$copy_btn)
+  })
+}
+
+
+setPairProgSessionUI <- function(id) {
+  ns <- NS(id)
+  tagList(
+    column(6,
+      numericInput(ns('week_number'), 'Week Number', value = 1, min = 1),
+    ),
+    column(6,
+      selectizeInput(ns('session_name'), 'Session Name',
+        choices = NULL, options = list( create = TRUE)
+      )
+    )
+  )
+}
+
+setPairProgSession <- function(id, pair_data = NULL) {
+  moduleServer(id, function(input, output, session) {
+    observe({
+      req(pair_data)
+      
+      existing_sessions <- unique(pair_data()$session)
+      existing_sessions <- existing_sessions[!is.na(existing_sessions)]
+      week <- max(pair_data()$week, 1, na.rm = TRUE)
+      
+      updateNumericInput(
+        session,
+        'week_number',
+        value = week
+      )
+
+      updateSelectizeInput(
+        session,
+        'session_name',
+        choices = existing_sessions %||% 'Session 1',
+        server = TRUE
+      )
+    })
+    
+    # Return the selected values
+    reactive({
+      list(
+        week = input$week_number,
+        session = input$session_name
+      )
+    })
   })
 }
