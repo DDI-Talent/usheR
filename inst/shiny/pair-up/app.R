@@ -7,18 +7,17 @@ source('_tmp-helpers.R')
 source('modules.R')
 
 tab_title <- 'Pair programmng pairing app '
-app_version <- '0.3.0'
+app_version <- '0.4.0'
 app_title <- HTML(paste0(
   tab_title,
-  span(paste0('v', app_version), style = 'color: #E67E22')
+  span(paste0('v', app_version), style = 'font-size: .5em; color: #9B59B6')
 ))
 
 ui <- fluidPage(
   shinyjs::useShinyjs(),
   title = tab_title,
   titlePanel(app_title),
-  tags$head(tags$link( rel = "stylesheet", type = "text/css", href = "style.css"
-  )),
+  tags$head(tags$link( rel = "stylesheet", type = "text/css", href = "style.css")),
 
   tabsetPanel(
     id = 'tabs',
@@ -37,8 +36,6 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-
-reactlog::reactlog_module_server()
   present_students <- selectAttendingStudents('presence_tab')
   pairPresentStudents('pairing_tab', present_students)
 }

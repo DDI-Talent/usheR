@@ -4,10 +4,21 @@ create_pair_divs <- function(pairs, gr_num) {
   g <- htmltools::p(class = 'pair-group', paste('Group', gr_num))
   ul <- htmltools::tags$ul(class = 'individuals', lapply(pairs, tags$li))
 
-  paste(
-    htmltools::tags$div(class = 'pair-group-container', g, '\n', ul)
-  ) |>
-    htmltools::HTML()
+  # paste(
+  #   htmltools::tags$div(class = 'pair-group-container', g, '\n', ul)
+  # ) |>
+  #   htmltools::HTML()
+
+
+  column(
+    width = 4,
+    class = "col-sm-12 col-md-6 col-lg-4 col-xl-2",  # Responsive breakpoints
+    div(
+      class = 'pair-group-container',
+      #style = 'background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px;',
+      g, ul
+    )
+  )
 }
 
 prep_for_copy <- function(d) {

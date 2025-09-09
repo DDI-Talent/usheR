@@ -1,8 +1,8 @@
 uploadClassDataUI <- function(id) {
   ns <- NS(id)
   tagList(
-    actionLink(ns('btn_reset'), 'Reset file', class = 'btn-danger',
-               style = 'padding: 3px; border-radius: 4px; margin-bottom: 10px;'),
+    actionButton(ns('btn_reset'), 'Reset file', class = 'btn-danger',
+               style = 'padding: 3px 4px; font-size: 0.8em;'),
     fileInput(
       ns('class_history_file'), 'Choose Attendance File', accept = '.csv')
   )
@@ -35,13 +35,13 @@ selectAttendingStudentsUI <- function(id) {
   tagList(
     sidebarLayout(
       sidebarPanel(
-        width = 4,
+        width = 3,
         uploadClassDataUI(ns('upload_class_data')),
         uiOutput(ns('make_student_selection'))
       ),
 
       mainPanel(
-        column(width = 4, style = 'margin-top:20px; font-size: 1.2em;',
+        column(width = 3, style = 'margin-top:20px; font-size: 1.2em;',
           htmlOutput(ns('n_present'))
         ),
         column(width = 8, tableOutput(ns('present_students')))
@@ -91,7 +91,7 @@ selectAttendingStudents <- function(id) {
 
       tagList(
         div(
-          style = 'margin-bottom: 50px;', # !! Doesn't actually work for some reason
+          style = 'margin-bottom: 30px;', # !! Doesn't actually work for some reason
           setPairProgSessionUI(ns('set_session')),
         ),
         
@@ -101,6 +101,7 @@ selectAttendingStudents <- function(id) {
             'Students selected below will be <span class=INcluded>INcluded</span>'
           )
         ),
+        p('(click to toggle)', style = 'text-align: right;'),
         div(class = 'select-students-input',
           selectizeInput( ns('select_students'), 'Choose students',
             choices = c('Everyone', class_list()$name),
@@ -145,6 +146,7 @@ pairPresentStudentsUI <- function(id) {
   tagList(
     sidebarLayout(
       sidebarPanel(
+        width = 3,
         div(
           class = 'pair-controls',
           actionButton(ns('btn_pair'), 'Pair Up',
@@ -158,7 +160,9 @@ pairPresentStudentsUI <- function(id) {
         saveClassDataUI(ns('save_pairs'), 'Save pairs')
       ),
       mainPanel(
-        htmlOutput(ns('new_pairs'))
+        width = 8,
+        # htmlOutputns('new_pairs')
+        uiOutput(ns('new_pairs'))
       )
     )
   )
@@ -187,10 +191,18 @@ pairPresentStudents <- function(id, attendance) {
     }) |>
       bindEvent(input$btn_pair)
 
-    output$new_pairs <- renderText({
-      purrr::imap_chr(pairs_list()[[1]], create_pair_divs) |>
-        paste0(collapse = '') |>
-        htmltools::HTML()
+    # output$new_pairs <- renderText({
+    #   p <- purrr::imap_chr(pairs_list()[[1]], create_pair_divs) |>
+    #     paste0(collapse = '') |>
+    #     htmltools::HTML()
+    # })
+
+    output$new_pairs <- renderUI({
+      fluidRow(
+        column(12,
+          purrr::imap(pairs_list()[[1]], create_pair_divs)
+        )
+      )
     })
 
     observe(input$btn_pair) |>

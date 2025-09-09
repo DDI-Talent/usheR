@@ -6,41 +6,21 @@
 <div class="quarto-title-meta">
   </div>
 </header>
+<!--
+Added handling of week/session
+Updated style of selectizeInput because of conflict with setPairProgSession selectizeInput
+-->
 <section id="todo" class="level2">
 <h2 class="anchored" data-anchor-id="todo">TODO</h2>
-<section id="add-session-value" class="level3">
-<h3 class="anchored" data-anchor-id="add-session-value">Add session value</h3>
-<ul>
-<li><img src="https://badgen.net/static/Effort/2/yellow?labelColor=yellow"></li>
-<li>PP sessions are often repeated</li>
-<li>App needs to record which session pairs happened in</li>
-<li>Needs to allow user to input session name</li>
-<li>Ask is to display past names for consistency / or to edit for new session</li>
-<li>Will need to check how app handles incrementing week</li>
-<li>Probably will need to give user control of week and session id</li>
-</ul>
-</section>
-<section id="change-pairs-display" class="level3">
-<h3 class="anchored" data-anchor-id="change-pairs-display">Change pairs display</h3>
-<ul>
-<li><img src="https://badgen.net/static/Effort/1/green?labelColor=green"></li>
-<li>current divs take up too much space with large groups</li>
-<li>probably just a table is neater</li>
-</ul>
-</section>
-<section id="add-ability-to-add-session-identifier" class="level3">
-<h3 class="anchored" data-anchor-id="add-ability-to-add-session-identifier">Add ability to add session identifier</h3>
-<ul>
-<li>e.g.&nbsp;<code>week-01_session-01</code></li>
-</ul>
-</section>
 <section id="add-functionality-to-add-or-remove-students-from-arbitrary-groups" class="level3">
 <h3 class="anchored" data-anchor-id="add-functionality-to-add-or-remove-students-from-arbitrary-groups">Add functionality to add or remove students from arbitrary groups</h3>
 <ul>
 <li><img src="https://badgen.net/static/Effort/3/orange?labelColor=orange"></li>
 <li>to allow for late arrivals.</li>
 <li>For the time being this can be done by done by manually editing the CSV.</li>
-<li>The CSV path is displayed when the file is uploaded for easy navigation. - Could open folder with link? Not sure how possible this is when running on cloud.</li>
+<li>The CSV path is displayed when the file is uploaded for easy navigation.</li>
+<li>Could open folder with link? Not sure how possible this is when running on cloud.</li>
+<li>Alternatively could add a tab that would allow manual editing within the app.</li>
 </ul>
 </section>
 <section id="improve-storage-solution" class="level3">
@@ -66,11 +46,57 @@
 <li>or open matching file by course name</li>
 </ul></li>
 </ul>
+</section>
+<section id="improve-display-of-present-students" class="level3">
+<h3 class="anchored" data-anchor-id="improve-display-of-present-students">Improve display of present students</h3>
+<ul>
+<li><img src="https://badgen.net/static/Effort/1/green?labelColor=green"></li>
+<li>Show table as in instructions.</li>
+<li>Easy to do once html-table branch merged with main.</li>
+</ul>
+</section>
+<section id="see-about-tidying-wrapped-pair-groups" class="level3">
+<h3 class="anchored" data-anchor-id="see-about-tidying-wrapped-pair-groups">See about tidying wrapped pair-groups</h3>
+<ul>
+<li><img src="https://badgen.net/static/Effort/2/yellow?labelColor=yellow"></li>
+<li>When names are long the wrapped panels can get untidy.</li>
+<li>Not sure how to fix
+<ul>
+<li>guessing maybe some kind of flexbox solution?</li>
+</ul></li>
+</ul>
+</section>
+<section id="improve-error-messaging" class="level3">
+<h3 class="anchored" data-anchor-id="improve-error-messaging">Improve error messaging</h3>
+<ul>
+<li><img src="https://badgen.net/static/Effort/1/green?labelColor=green">? Or maybe <img src="https://badgen.net/static/Effort/2/yellow?labelColor=yellow">?
+<ul>
+<li>Probably more annoying than difficult</li>
+</ul></li>
+<li>Not a priority</li>
+<li>File reset doesn’t work if an error is reaised</li>
+<li>Some expected messages are not diplayed</li>
+<li>Some are displayed int the wrong place</li>
+</ul>
 <hr>
 </section>
 </section>
 <section id="changes" class="level2">
 <h2 class="anchored" data-anchor-id="changes">Changes</h2>
+<section id="v0.4.0" class="level3">
+<h3 class="anchored" data-anchor-id="v0.4.0">v0.4.0</h3>
+<ul>
+<li>Changed group display to wrap full screen width</li>
+<li>Added ToC to instructions</li>
+<li>Various aesthetic adjustments</li>
+</ul>
+</section>
+<section id="v0.3.0" class="level3">
+<h3 class="anchored" data-anchor-id="v0.3.0">v0.3.0</h3>
+<ul>
+<li>Added ability to specify week and session</li>
+</ul>
+</section>
 <section id="v0.2.0" class="level3">
 <h3 class="anchored" data-anchor-id="v0.2.0">v0.2.0</h3>
 <ul>
