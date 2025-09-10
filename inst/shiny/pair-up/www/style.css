@@ -1,3 +1,6 @@
+.content { margin: 0 150px; font-size: 1em}
+hr { border: 2px solid #e7d6e3; }
+
 .pair-controls {
   display: flex;
   margin-bottom: 20px;
@@ -113,16 +116,25 @@ a.btn.shiny-download-link { background-color: #2ECC71;}
 .jwTab .row_inner {border-top: 1px solid #e7d6e3; border-bottom: 1px solid #e7d6e3;}
 .jwTab .row_highlight {background-color: #e7d6e3;}
 
-hr {
-  border: 2px solid #e7d6e3;
-}
-
-.jwTab table {
-  border-collapse: collapse;
-}
-
-.jwTab tr:last-child td:first-child {
+.jwTab tr:last-child td:firut-child {
   border-bottom: 3px solid white;
 }
 
-.content { margin: 0 150px; font-size: 1em}
+.jwTab table {
+  margin: 0 auto;
+  width: 50%;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.jwTab td:first-child {
+    padding-right: 20px;
+}
+
+.jwTab td:first-child,
+.jwTab th:first-child,
+.jwTab td:last-child,
+.jwTab th:last-child {
+  white-space: nowrap;
+  width: auto;
+}

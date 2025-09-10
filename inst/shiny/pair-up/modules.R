@@ -212,7 +212,7 @@ pairPresentStudents <- function(id, attendance) {
       # This should make use of NBs convert_to_df() function
       most_recent_pairs <- convert_to_df(pairs_list()[[1]])
       most_recent_pairs$week <- as.integer(attendance()$pp_session$week)
-      most_recent_pairs$session <- attendance()$ppsession$session
+      most_recent_pairs$session <- attendance()$pp_session$session
 
       bind_rows(
         attendance()$class_data$class_list,
@@ -223,14 +223,12 @@ pairPresentStudents <- function(id, attendance) {
 
     file_info <- reactive({ attendance()$class_data$file_meta })
 
-    observe({
-      copyToClipboard('btn_copy_pairs', combined_data, reactive(input$btn_pair))
+    copyToClipboard('btn_copy_pairs', pairs_list, reactive(input$btn_pair))
 
-      saveClassData(
-        'save_pairs', combined_data,
-        file_info, reactive(input$btn_pair)
-      )
-    })
+    saveClassData(
+      'save_pairs', combined_data,
+      file_info, reactive(input$btn_pair)
+    )
   })
 }
 
@@ -311,12 +309,15 @@ copyToClipboardUI <- function(id) {
   ns <- NS(id)
   span(
     id = ns('clipboard_container'),
-    actionButton(ns('copy_btn'), 'Copy to Clipboard', class = 'btn-info')
+    #actionButton(ns('copy_btn'), 'Copy to Clipboard', class = 'btn-info')
+    uiOutput(ns('clip'), inline = TRUE)
   )
 }
 
 copyToClipboard <- function(id, data_reactive, reveal_button) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
     observe({
       if (reveal_button()) {
         shinyjs::show('clipboard_container')
@@ -326,17 +327,24 @@ copyToClipboard <- function(id, data_reactive, reveal_button) {
     })
 
     observe({
-      data_reactive() |>
-        prep_for_copy() |>
-        clipr::write_clip(allow_non_interactive = TRUE)
+        showNotification(
+          'Groups copied to clipboard!',
+          type = 'message',
+          duration = 2
+       )
+     }) |> bindEvent(input$copy_btn)
 
-      showNotification(
-        'Groups copied to clipboard!',
-        type = 'message',
-        duration = 2
-      )
-    }) |>
-      bindEvent(input$copy_btn)
+    output$clip <- renderUI({
+      data_reactive()[[1]] |>
+        prep_for_copy() |>
+        rclipboard::rclipButton(
+          inputId = ns('copy_btn'),
+          label = 'Copy to clipboard',
+          clipText = _,
+          icon = icon('clipboard'),
+          class = 'btn btn-info'
+        )
+    })
   })
 }
 

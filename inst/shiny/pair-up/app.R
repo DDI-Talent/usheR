@@ -2,12 +2,13 @@
 library(dplyr)
 library(shiny)
 library(shinyjs)
+library(rclipboard)
 source('global.R')
 source('_tmp-helpers.R')
 source('modules.R')
 
 tab_title <- 'Pair programmng pairing app '
-app_version <- '0.4.0'
+app_version <- '0.4.1'
 app_title <- HTML(paste0(
   tab_title,
   span(paste0('v', app_version), style = 'font-size: .5em; color: #9B59B6')
@@ -15,6 +16,7 @@ app_title <- HTML(paste0(
 
 ui <- fluidPage(
   shinyjs::useShinyjs(),
+  rclipboard::rclipboardSetup(),
   title = tab_title,
   titlePanel(app_title),
   tags$head(tags$link( rel = "stylesheet", type = "text/css", href = "style.css")),

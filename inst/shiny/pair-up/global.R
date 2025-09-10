@@ -22,12 +22,12 @@ create_pair_divs <- function(pairs, gr_num) {
 }
 
 prep_for_copy <- function(d) {
-  d[d$week != 0, 'name'] |>
+  d |> 
     strsplit('~~') |>
     unname() |>
     purrr::imap_chr(
       ~ sprintf('Group %02i\n%s\n', .y, paste0('  - ', .x, collapse = '\n'))
-    )
+    ) |> paste0(collapse = '\n')
 }
 
 validate_class_data <- function(d) {
