@@ -60,9 +60,12 @@ To run a grey code block below, click anywhere inside it and then click the gree
 
 ````         
 ```{{r echo = T, results = 'hide'}}
-install.packages("devtools")
-devtools::install_github('ddi-talent/usheR')
+if (!require("devtools")){
+  install.packages("devtools")
+  library(devtools)
+}
 
+devtools::install_github('ddi-talent/usheR')
 library(usheR)
 update_from_github()
 ```
